@@ -1,10 +1,11 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class AdjustWalls : MonoBehaviour
 {
-    private Transform topWall, rightWall, downWall, leftWall;
+    public static Transform topWall, rightWall, downWall, leftWall;
     private float cameraHeight, cameraWidth;
 
     private void Awake()
@@ -43,6 +44,6 @@ public class AdjustWalls : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        
+        if (Input.GetKeyDown("r")) SceneManager.LoadScene(SceneManager.GetActiveScene().name);
     }
 }

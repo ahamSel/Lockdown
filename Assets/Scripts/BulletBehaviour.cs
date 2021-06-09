@@ -5,19 +5,21 @@ using UnityEngine;
 
 public class BulletBehaviour : MonoBehaviour
 {
-    private Rigidbody2D bulletRb;
     public float bulletSpeed;
+
+    private System.Random random = new System.Random();
+    private Rigidbody2D bulletRb;
     private Vector3 dir;
     private Vector2 bulletScale;
-    private float timeToSplit = 5f;
-    private int subBullets = 2;
+    private float timeToSplit = 10f;
+    private int subBullets = 3;
 
     // Start is called before the first frame update
     void Start()
     {
         bulletScale = transform.localScale;
         bulletRb = GetComponent<Rigidbody2D>();
-        transform.Rotate(0, 0, 25);
+        transform.Rotate(0, 0, random.Next(0, 360));
         bulletRb.velocity = transform.right * bulletSpeed;
     }
 
@@ -25,7 +27,7 @@ public class BulletBehaviour : MonoBehaviour
     {
         Single speed = dir.magnitude;
         Vector3 direction = Vector3.Reflect(dir.normalized, collision.contacts[0].normal);
-        if (bulletRb != null) bulletRb.velocity = direction * Mathf.Max(speed, 0f);
+        if (bulletRb != null) bulletRb.velocity = direction * Mathf.Max(0f, speed);
     }
 
     // Update is called once per frame
@@ -36,24 +38,24 @@ public class BulletBehaviour : MonoBehaviour
 
     private void FixedUpdate()
     {
+        dir = bulletRb.velocity;
+
         timeToSplit -= Time.fixedDeltaTime;
         if (timeToSplit > 0)
         {
-            bulletScale += new Vector2(Time.fixedDeltaTime, Time.fixedDeltaTime) / 10;
+            bulletScale += new Vector2(Time.fixedDeltaTime, Time.fixedDeltaTime) / 30;
             transform.localScale = bulletScale;
         }
         else
         {
-            timeToSplit = 5f;
+            timeToSplit = 10f;
             for (int i = 0; i < subBullets; i++)
             {
                 GameObject subBullet = Instantiate(gameObject, transform.position, transform.rotation);
-                subBullet.transform.Rotate(0, 0, new System.Random().Next(0, 360));
+                subBullet.transform.Rotate(0, 0, random.Next(0, 360));
                 subBullet.transform.localScale = new Vector2(0.2f, 0.2f);
             }
             Destroy(gameObject);
         }
-
-        dir = bulletRb.velocity;
     }
 }
