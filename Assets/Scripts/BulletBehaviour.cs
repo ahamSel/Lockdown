@@ -40,10 +40,10 @@ public class BulletBehaviour : MonoBehaviour
     {
         dir = bulletRb.velocity;
 
-        timeToSplit -= Time.fixedDeltaTime;
+        timeToSplit -= Time.deltaTime;
         if (timeToSplit > 0)
         {
-            bulletScale += new Vector2(Time.fixedDeltaTime, Time.fixedDeltaTime) / 30;
+            bulletScale += new Vector2(Time.deltaTime, Time.deltaTime) / 30;
             transform.localScale = bulletScale;
         }
         else

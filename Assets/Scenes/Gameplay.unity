@@ -130,10 +130,6 @@ PrefabInstance:
   m_Modification:
     m_TransformParent: {fileID: 0}
     m_Modifications:
-    - target: {fileID: 13168214, guid: 83c1f4c07b3c2ca4dabfd14ff371d778, type: 3}
-      propertyPath: player
-      value: 
-      objectReference: {fileID: 2772092229637838790}
     - target: {fileID: 3110220617739876823, guid: 83c1f4c07b3c2ca4dabfd14ff371d778, type: 3}
       propertyPath: m_Name
       value: Powerups
@@ -144,11 +140,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7751751286392432320, guid: 83c1f4c07b3c2ca4dabfd14ff371d778, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 3.81
+      value: 11.88
       objectReference: {fileID: 0}
     - target: {fileID: 7751751286392432320, guid: 83c1f4c07b3c2ca4dabfd14ff371d778, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 1.32
+      value: 2.45
       objectReference: {fileID: 0}
     - target: {fileID: 7751751286392432320, guid: 83c1f4c07b3c2ca4dabfd14ff371d778, type: 3}
       propertyPath: m_LocalPosition.z
@@ -241,11 +237,6 @@ PrefabInstance:
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: e961f7c4208e3b644994f13e84eca4ba, type: 3}
---- !u!1 &2772092229637838790 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 5711188717705272651, guid: e961f7c4208e3b644994f13e84eca4ba, type: 3}
-  m_PrefabInstance: {fileID: 2772092229637838789}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &3185976034821336727
 PrefabInstance:
   m_ObjectHideFlags: 0

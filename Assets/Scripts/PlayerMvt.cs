@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class PlayerMvt : MonoBehaviour
 {
-    public static float moveSpeed = 10f;
+    public float moveSpeed = 10f;
     private Rigidbody2D playerRb;
     private Vector2 moveDir;
 
@@ -22,7 +22,6 @@ public class PlayerMvt : MonoBehaviour
 
     private void FixedUpdate()
     {
-        moveSpeed /= Time.timeScale;
         Move();
     }
 
