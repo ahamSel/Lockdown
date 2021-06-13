@@ -5,7 +5,7 @@ using UnityEngine;
 
 public class PlayerStatsColTrig : MonoBehaviour
 {
-    private Dictionary<string, Action<Color>> powerupsCata;
+    private Dictionary<string, Action> powerupsCata;
     public float shieldTime, fireTime, doubleTimeTime, halveTimeTime, shrinkTime, growTime, speedUpTime, slowDownTime;
     public bool shieldOn, fireOn;
 
@@ -25,7 +25,7 @@ public class PlayerStatsColTrig : MonoBehaviour
 
         playerColor = GetComponent<SpriteRenderer>().color;
 
-        powerupsCata = new Dictionary<string, Action<Color>>()
+        powerupsCata = new Dictionary<string, Action>()
         {
             { "Health", IncreasePlayerHealth },
             { "Shield", ShieldPlayer },
@@ -83,7 +83,7 @@ public class PlayerStatsColTrig : MonoBehaviour
         if (shrinkTime > 0) shrinkTime -= Time.unscaledDeltaTime;
         else if (shrinkTime < 0) NormalPlayerSize();
 
-        ColorSwitch();
+        ColorSwitchHandler();
     }
 
     private void OnCollisionEnter2D(Collision2D col)
@@ -97,24 +97,22 @@ public class PlayerStatsColTrig : MonoBehaviour
 
     private void OnTriggerEnter2D(Collider2D trig)
     {
-        powerupsCata[trig.name](trig.GetComponent<SpriteRenderer>().color);
+        powerupsCata[trig.name]();
     }
 
-    void IncreasePlayerHealth(Color powerupColor)
+    void IncreasePlayerHealth()
     {
         playerHealth += 5;
     }
 
-    void ShieldPlayer(Color powerupColor)
+    void ShieldPlayer()
     {
         fireOn = false; fireTime = 0;
         shieldOn = true;
         shieldTime += 5f;
-
-        // GetComponent<SpriteRenderer>().color = powerupColor;
     }
 
-    void DoubleTimeSpeed(Color powerupColor)
+    void DoubleTimeSpeed()
     {
         halveTimeTime = 0;
         playerMvt.moveSpeed *= Time.timeScale;
@@ -122,10 +120,8 @@ public class PlayerStatsColTrig : MonoBehaviour
         Time.fixedDeltaTime = Time.timeScale * 0.02f;
         playerMvt.moveSpeed /= Time.timeScale;
         doubleTimeTime += 5f;
-
-        // GetComponent<SpriteRenderer>().color = powerupColor;
     }
-    void HalveTimeSpeed(Color powerupColor)
+    void HalveTimeSpeed()
     {
         doubleTimeTime = 0;
         playerMvt.moveSpeed *= Time.timeScale;
@@ -133,85 +129,65 @@ public class PlayerStatsColTrig : MonoBehaviour
         Time.fixedDeltaTime = Time.timeScale * 0.02f;
         playerMvt.moveSpeed /= Time.timeScale;
         halveTimeTime += 5f;
-
-        // GetComponent<SpriteRenderer>().color = powerupColor;
     }
 
-    void RazeMostBullets(Color powerupColor)
+    void RazeMostBullets()
     {
         GameObject[] bullets = GameObject.FindGameObjectsWithTag("Bullet");
         for (int i = 3; i < bullets.Length; i++)
             Destroy(bullets[i]);
     }
 
-    void PlayerBurnsBullets(Color powerupColor)
+    void PlayerBurnsBullets()
     {
         shieldOn = false; shieldTime = 0;
         fireOn = true;
         fireTime += 5f;
-
-        // GetComponent<SpriteRenderer>().color = powerupColor;
     }
 
-    void ShrinkPlayer(Color powerupColor)
+    void ShrinkPlayer()
     {
         growTime = 0;
         transform.localScale = new Vector2(0.2f, 0.2f);
         shrinkTime += 5f;
-
-        // GetComponent<SpriteRenderer>().color = powerupColor;
     }
-    void GrowPlayer(Color powerupColor)
+    void GrowPlayer()
     {
         shrinkTime = 0;
         transform.localScale = new Vector2(0.8f, 0.8f);
         growTime += 5f;
-        
-        // GetComponent<SpriteRenderer>().color = powerupColor;
     }
 
-    void SpeedUpPlayer(Color powerupColor)
+    void SpeedUpPlayer()
     {
         slowDownTime = 0;
         playerMvt.moveSpeed = 15f / Time.timeScale;
         speedUpTime += 5f;
-
-        // GetComponent<SpriteRenderer>().color = powerupColor;
     }
-    void SlowDownPlayer(Color powerupColor)
+    void SlowDownPlayer()
     {
         speedUpTime = 0;
         playerMvt.moveSpeed = 5f / Time.timeScale;
         slowDownTime += 5f;
-
-        // GetComponent<SpriteRenderer>().color = powerupColor;
     }
 
     public void ShieldOff() {
         shieldOn = false;
         shieldTime = 0;
-        // GetComponent<SpriteRenderer>().color = playerColor;
-        // Debug.Log("shieldOff");
     }
     public void FireOff() {
         fireOn = false;
         fireTime = 0;
-        // GetComponent<SpriteRenderer>().color = playerColor;
-        // Debug.Log("fireOff");
     }
     public void NormalPlayerSpeed() {
         playerMvt.moveSpeed = 10f / Time.timeScale;
         speedUpTime = 0;
         slowDownTime = 0;
-        // GetComponent<SpriteRenderer>().color = playerColor;
-        // Debug.Log("playerSpeed");
     }
     public void NormalPlayerSize() {
         transform.localScale = new Vector2(0.5f, 0.5f);
         growTime = 0;
         shrinkTime = 0;
-        // GetComponent<SpriteRenderer>().color = playerColor;
-        // Debug.Log("playerSize");
     }
     public void NormalTimeSpeed() {
         playerMvt.moveSpeed *= Time.timeScale;
@@ -220,11 +196,9 @@ public class PlayerStatsColTrig : MonoBehaviour
         playerMvt.moveSpeed /= Time.timeScale;
         doubleTimeTime = 0;
         halveTimeTime = 0;
-        // GetComponent<SpriteRenderer>().color = playerColor;
-        // Debug.Log("timeSpeed");
     }
 
-    void ColorSwitch()
+    void ColorSwitchHandler()
     {
         powerupTimes.Clear();
         powerupTimes.Add(shieldTime);
@@ -251,6 +225,5 @@ public class PlayerStatsColTrig : MonoBehaviour
             if (maxTime == growTime) GetComponent<SpriteRenderer>().color = growColor;
         }
         else GetComponent<SpriteRenderer>().color = playerColor;
-        Debug.Log(maxTime);
     }
 }
