@@ -18,6 +18,8 @@ public class PlayerStatsColTrig : MonoBehaviour
     private List<float> powerupTimes;
     private Color shieldColor, fireColor, doubleTimeColor, halveTimeColor, shrinkColor, growColor, speedUpColor, slowDownColor;
 
+    private int playerOrderLayer;
+
     // Start is called before the first frame update
     void Start()
     {
@@ -49,6 +51,8 @@ public class PlayerStatsColTrig : MonoBehaviour
         slowDownColor = GameObject.Find("SlowDown").GetComponent<SpriteRenderer>().color;
         doubleTimeColor = GameObject.Find("Timex2").GetComponent<SpriteRenderer>().color;
         halveTimeColor = GameObject.Find("Time/2").GetComponent<SpriteRenderer>().color;
+
+        playerOrderLayer = GetComponent<SpriteRenderer>().sortingOrder;
     }
 
     // Update is called once per frame
@@ -209,21 +213,47 @@ public class PlayerStatsColTrig : MonoBehaviour
         powerupTimes.Add(shrinkTime);
         powerupTimes.Add(doubleTimeTime);
         powerupTimes.Add(halveTimeTime);
+        
+        powerupTimes.Sort();
+        powerupTimes.Reverse();
 
-        float maxTime = 0;
-        for (int i = 0; i < powerupTimes.Count; i++)
-            if (powerupTimes[i] > maxTime) maxTime = powerupTimes[i];
-        if (maxTime > 0)
+        if (powerupTimes[0] > 0)
         {
-            if (maxTime == shieldTime) GetComponent<SpriteRenderer>().color = shieldColor;
-            if (maxTime == halveTimeTime) GetComponent<SpriteRenderer>().color = halveTimeColor;
-            if (maxTime == slowDownTime) GetComponent<SpriteRenderer>().color = slowDownColor;
-            if (maxTime == doubleTimeTime) GetComponent<SpriteRenderer>().color = doubleTimeColor;
-            if (maxTime == speedUpTime) GetComponent<SpriteRenderer>().color = speedUpColor;
-            if (maxTime == shrinkTime) GetComponent<SpriteRenderer>().color = shrinkColor;
-            if (maxTime == fireTime) GetComponent<SpriteRenderer>().color = fireColor;
-            if (maxTime == growTime) GetComponent<SpriteRenderer>().color = growColor;
+            Color selectedColor = Color.black;
+            if (powerupTimes[0] == shieldTime) selectedColor = shieldColor;
+            if (powerupTimes[0] == halveTimeTime) selectedColor = halveTimeColor;
+            if (powerupTimes[0] == slowDownTime) selectedColor = slowDownColor;
+            if (powerupTimes[0] == doubleTimeTime) selectedColor = doubleTimeColor;
+            if (powerupTimes[0] == speedUpTime) selectedColor = speedUpColor;
+            if (powerupTimes[0] == shrinkTime) selectedColor = shrinkColor;
+            if (powerupTimes[0] == fireTime) selectedColor = fireColor;
+            if (powerupTimes[0] == growTime) selectedColor = growColor;
+            GetComponent<SpriteRenderer>().color = selectedColor;
         }
         else GetComponent<SpriteRenderer>().color = playerColor;
+
+        for (int i = 1; i < powerupTimes.Count - 4; i++) // 4 because 4 powerups cancel other four. otherwise i would consider them all
+        {
+            if (powerupTimes[i] > 0)
+            {
+                Color childColor = Color.black;
+                if (powerupTimes[i] == shieldTime) childColor = shieldColor;
+                if (powerupTimes[i] == halveTimeTime) childColor = halveTimeColor;
+                if (powerupTimes[i] == slowDownTime) childColor = slowDownColor;
+                if (powerupTimes[i] == doubleTimeTime) childColor = doubleTimeColor;
+                if (powerupTimes[i] == speedUpTime) childColor = speedUpColor;
+                if (powerupTimes[i] == shrinkTime) childColor = shrinkColor;
+                if (powerupTimes[i] == fireTime) childColor = fireColor;
+                if (powerupTimes[i] == growTime) childColor = growColor;
+                transform.GetChild(i - 1).GetComponent<SpriteRenderer>().color = childColor;
+
+                transform.GetChild(i - 1).GetComponent<SpriteRenderer>().sortingOrder = i;
+            } 
+            else
+            {
+                transform.GetChild(i - 1).GetComponent<SpriteRenderer>().color = playerColor;
+                transform.GetChild(i - 1).GetComponent<SpriteRenderer>().sortingOrder = -1;
+            }
+        }
     }
 }

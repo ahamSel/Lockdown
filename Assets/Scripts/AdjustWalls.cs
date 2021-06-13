@@ -13,10 +13,10 @@ public class AdjustWalls : MonoBehaviour
         cameraHeight = Camera.main.orthographicSize;
         cameraWidth = Camera.main.aspect * cameraHeight;
 
-        topWall = transform.GetChild(0).gameObject.transform;
-        rightWall = transform.GetChild(1).gameObject.transform;
-        downWall = transform.GetChild(2).gameObject.transform;
-        leftWall = transform.GetChild(3).gameObject.transform;
+        topWall = transform.GetChild(0).transform;
+        rightWall = transform.GetChild(1).transform;
+        downWall = transform.GetChild(2).transform;
+        leftWall = transform.GetChild(3).transform;
     }
 
     // Start is called before the first frame update
