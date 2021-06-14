@@ -10,14 +10,12 @@ public class BulletBehaviour : MonoBehaviour
     private System.Random random = new System.Random();
     private Rigidbody2D bulletRb;
     private Vector3 dir;
-    private Vector2 bulletScale;
     private float timeToSplit = 10f;
     private int subBullets = 3;
 
     // Start is called before the first frame update
     void Start()
     {
-        bulletScale = transform.localScale;
         bulletRb = GetComponent<Rigidbody2D>();
         transform.Rotate(0, 0, random.Next(0, 360));
         bulletRb.velocity = transform.right * bulletSpeed;
@@ -41,11 +39,7 @@ public class BulletBehaviour : MonoBehaviour
         dir = bulletRb.velocity;
 
         timeToSplit -= Time.deltaTime;
-        if (timeToSplit > 0)
-        {
-            bulletScale += new Vector2(Time.deltaTime, Time.deltaTime) / 30;
-            transform.localScale = bulletScale;
-        }
+        if (timeToSplit > 0) transform.localScale += new Vector3(Time.deltaTime, Time.deltaTime) / 30;
         else
         {
             timeToSplit = 10f;

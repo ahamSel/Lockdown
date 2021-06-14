@@ -3,7 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class PlayerStatsColTrig : MonoBehaviour
+public class PlayerCollisions : MonoBehaviour
 {
     private Dictionary<string, Action> powerupsCata;
     public float shieldTime, fireTime, doubleTimeTime, halveTimeTime, shrinkTime, growTime, speedUpTime, slowDownTime;
@@ -13,12 +13,10 @@ public class PlayerStatsColTrig : MonoBehaviour
 
     private PlayerMvt playerMvt;
 
-    private Color playerColor;
+    private float powerupTimeLength = 10f;
 
     private List<float> powerupTimes;
-    private Color shieldColor, fireColor, doubleTimeColor, halveTimeColor, shrinkColor, growColor, speedUpColor, slowDownColor;
-
-    private int playerOrderLayer;
+    private Color playerColor, shieldColor, fireColor, doubleTimeColor, halveTimeColor, shrinkColor, growColor, speedUpColor, slowDownColor;
 
     // Start is called before the first frame update
     void Start()
@@ -51,8 +49,6 @@ public class PlayerStatsColTrig : MonoBehaviour
         slowDownColor = GameObject.Find("SlowDown").GetComponent<SpriteRenderer>().color;
         doubleTimeColor = GameObject.Find("Timex2").GetComponent<SpriteRenderer>().color;
         halveTimeColor = GameObject.Find("Time/2").GetComponent<SpriteRenderer>().color;
-
-        playerOrderLayer = GetComponent<SpriteRenderer>().sortingOrder;
     }
 
     // Update is called once per frame
@@ -65,7 +61,7 @@ public class PlayerStatsColTrig : MonoBehaviour
     {
         if (shieldTime > 0) shieldTime -= Time.unscaledDeltaTime;
         else if (shieldTime < 0) ShieldOff();
-         
+
         if (fireTime > 0) fireTime -= Time.unscaledDeltaTime;
         else if (fireTime < 0) FireOff();
 
@@ -101,7 +97,8 @@ public class PlayerStatsColTrig : MonoBehaviour
 
     private void OnTriggerEnter2D(Collider2D trig)
     {
-        powerupsCata[trig.name]();
+        powerupsCata[trig.name.Substring(0, trig.name.IndexOf('('))]();
+        Destroy(trig.gameObject);
     }
 
     void IncreasePlayerHealth()
@@ -113,7 +110,7 @@ public class PlayerStatsColTrig : MonoBehaviour
     {
         fireOn = false; fireTime = 0;
         shieldOn = true;
-        shieldTime += 5f;
+        shieldTime += powerupTimeLength;
     }
 
     void DoubleTimeSpeed()
@@ -123,7 +120,7 @@ public class PlayerStatsColTrig : MonoBehaviour
         Time.timeScale = 2f;
         Time.fixedDeltaTime = Time.timeScale * 0.02f;
         playerMvt.moveSpeed /= Time.timeScale;
-        doubleTimeTime += 5f;
+        doubleTimeTime += powerupTimeLength;
     }
     void HalveTimeSpeed()
     {
@@ -132,7 +129,7 @@ public class PlayerStatsColTrig : MonoBehaviour
         Time.timeScale = 0.1f;
         Time.fixedDeltaTime = Time.timeScale * 0.02f;
         playerMvt.moveSpeed /= Time.timeScale;
-        halveTimeTime += 5f;
+        halveTimeTime += powerupTimeLength;
     }
 
     void RazeMostBullets()
@@ -146,54 +143,59 @@ public class PlayerStatsColTrig : MonoBehaviour
     {
         shieldOn = false; shieldTime = 0;
         fireOn = true;
-        fireTime += 5f;
+        fireTime += powerupTimeLength;
     }
 
     void ShrinkPlayer()
     {
         growTime = 0;
         transform.localScale = new Vector2(0.2f, 0.2f);
-        shrinkTime += 5f;
+        shrinkTime += powerupTimeLength;
     }
     void GrowPlayer()
     {
         shrinkTime = 0;
         transform.localScale = new Vector2(0.8f, 0.8f);
-        growTime += 5f;
+        growTime += powerupTimeLength;
     }
 
     void SpeedUpPlayer()
     {
         slowDownTime = 0;
         playerMvt.moveSpeed = 15f / Time.timeScale;
-        speedUpTime += 5f;
+        speedUpTime += powerupTimeLength;
     }
     void SlowDownPlayer()
     {
         speedUpTime = 0;
         playerMvt.moveSpeed = 5f / Time.timeScale;
-        slowDownTime += 5f;
+        slowDownTime += powerupTimeLength;
     }
 
-    public void ShieldOff() {
+    public void ShieldOff()
+    {
         shieldOn = false;
         shieldTime = 0;
     }
-    public void FireOff() {
+    public void FireOff()
+    {
         fireOn = false;
         fireTime = 0;
     }
-    public void NormalPlayerSpeed() {
+    public void NormalPlayerSpeed()
+    {
         playerMvt.moveSpeed = 10f / Time.timeScale;
         speedUpTime = 0;
         slowDownTime = 0;
     }
-    public void NormalPlayerSize() {
+    public void NormalPlayerSize()
+    {
         transform.localScale = new Vector2(0.5f, 0.5f);
         growTime = 0;
         shrinkTime = 0;
     }
-    public void NormalTimeSpeed() {
+    public void NormalTimeSpeed()
+    {
         playerMvt.moveSpeed *= Time.timeScale;
         Time.timeScale = 1f;
         Time.fixedDeltaTime = 0.02f;
@@ -213,7 +215,7 @@ public class PlayerStatsColTrig : MonoBehaviour
         powerupTimes.Add(shrinkTime);
         powerupTimes.Add(doubleTimeTime);
         powerupTimes.Add(halveTimeTime);
-        
+
         powerupTimes.Sort();
         powerupTimes.Reverse();
 
@@ -246,9 +248,8 @@ public class PlayerStatsColTrig : MonoBehaviour
                 if (powerupTimes[i] == fireTime) childColor = fireColor;
                 if (powerupTimes[i] == growTime) childColor = growColor;
                 transform.GetChild(i - 1).GetComponent<SpriteRenderer>().color = childColor;
-
                 transform.GetChild(i - 1).GetComponent<SpriteRenderer>().sortingOrder = i;
-            } 
+            }
             else
             {
                 transform.GetChild(i - 1).GetComponent<SpriteRenderer>().color = playerColor;
