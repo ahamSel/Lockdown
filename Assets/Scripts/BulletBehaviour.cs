@@ -7,11 +7,14 @@ public class BulletBehaviour : MonoBehaviour
 {
     public float bulletSpeed;
 
-    private System.Random random = new System.Random();
-    private Rigidbody2D bulletRb;
-    private Vector3 dir;
-    private float timeToSplit = 10f;
-    private int subBullets = 3;
+    System.Random random = new System.Random();
+    Rigidbody2D bulletRb;
+    Vector3 dir;
+    float timeToSplit = 10f;
+    int subBullets = 3;
+
+    GameObject player;
+    UIScript uiScript;
 
     // Start is called before the first frame update
     void Start()
@@ -19,6 +22,8 @@ public class BulletBehaviour : MonoBehaviour
         bulletRb = GetComponent<Rigidbody2D>();
         transform.Rotate(0, 0, random.Next(0, 360));
         bulletRb.velocity = transform.right * bulletSpeed;
+        player = GameObject.FindGameObjectWithTag("Player");
+        uiScript = GameObject.Find("Canvas").GetComponent<UIScript>();
     }
 
     private void OnCollisionEnter2D(Collision2D collision)
@@ -26,12 +31,6 @@ public class BulletBehaviour : MonoBehaviour
         Single speed = dir.magnitude;
         Vector3 direction = Vector3.Reflect(dir.normalized, collision.contacts[0].normal);
         if (bulletRb != null) bulletRb.velocity = direction * Mathf.Max(0f, speed);
-    }
-
-    // Update is called once per frame
-    void Update()
-    {
-        
     }
 
     private void FixedUpdate()
@@ -49,6 +48,7 @@ public class BulletBehaviour : MonoBehaviour
                 subBullet.transform.Rotate(0, 0, random.Next(0, 360));
                 subBullet.transform.localScale = new Vector2(0.2f, 0.2f);
             }
+            if (player) uiScript.bulletCount += subBullets;
             Destroy(gameObject);
         }
     }

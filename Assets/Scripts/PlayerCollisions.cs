@@ -5,18 +5,18 @@ using UnityEngine;
 
 public class PlayerCollisions : MonoBehaviour
 {
-    private Dictionary<string, Action> powerupsCata;
+    Dictionary<string, Action> powerupsCata;
     public float shieldTime, fireTime, doubleTimeTime, halveTimeTime, shrinkTime, growTime, speedUpTime, slowDownTime;
     public bool shieldOn, fireOn;
 
     public int playerHealth = 10;
 
-    private PlayerMvt playerMvt;
+    PlayerMvt playerMvt;
 
-    private float powerupTimeLength = 10f;
+    float powerupTimeLength = 10f;
 
-    private List<float> powerupTimes;
-    private Color playerColor, shieldColor, fireColor, doubleTimeColor, halveTimeColor, shrinkColor, growColor, speedUpColor, slowDownColor;
+    List<float> powerupTimes;
+    Color playerColor, shieldColor, fireColor, doubleTimeColor, halveTimeColor, shrinkColor, growColor, speedUpColor, slowDownColor;
 
     // Start is called before the first frame update
     void Start()
@@ -59,29 +59,29 @@ public class PlayerCollisions : MonoBehaviour
 
     private void FixedUpdate()
     {
-        if (shieldTime > 0) shieldTime -= Time.unscaledDeltaTime;
-        else if (shieldTime < 0) ShieldOff();
+        if (shieldTime > 0f) shieldTime -= Time.deltaTime / Time.timeScale;
+        else if (shieldTime < 0f) ShieldOff();
 
-        if (fireTime > 0) fireTime -= Time.unscaledDeltaTime;
-        else if (fireTime < 0) FireOff();
+        if (fireTime > 0f) fireTime -= Time.deltaTime / Time.timeScale;
+        else if (fireTime < 0f) FireOff();
 
-        if (doubleTimeTime > 0) doubleTimeTime -= Time.unscaledDeltaTime;
-        else if (doubleTimeTime < 0) NormalTimeSpeed();
+        if (doubleTimeTime > 0f) doubleTimeTime -= Time.deltaTime / Time.timeScale;
+        else if (doubleTimeTime < 0f) NormalTimeSpeed();
 
-        if (halveTimeTime > 0) halveTimeTime -= Time.unscaledDeltaTime;
-        else if (halveTimeTime < 0) NormalTimeSpeed();
+        if (halveTimeTime > 0f) halveTimeTime -= Time.deltaTime / Time.timeScale;
+        else if (halveTimeTime < 0f) NormalTimeSpeed();
 
-        if (speedUpTime > 0) speedUpTime -= Time.unscaledDeltaTime;
-        else if (speedUpTime < 0) NormalPlayerSpeed();
+        if (speedUpTime > 0f) speedUpTime -= Time.deltaTime / Time.timeScale;
+        else if (speedUpTime < 0f) NormalPlayerSpeed();
 
-        if (slowDownTime > 0) slowDownTime -= Time.unscaledDeltaTime;
-        else if (slowDownTime < 0) NormalPlayerSpeed();
+        if (slowDownTime > 0f) slowDownTime -= Time.deltaTime / Time.timeScale;
+        else if (slowDownTime < 0f) NormalPlayerSpeed();
 
-        if (growTime > 0) growTime -= Time.unscaledDeltaTime;
-        else if (growTime < 0) NormalPlayerSize();
+        if (growTime > 0f) growTime -= Time.deltaTime / Time.timeScale;
+        else if (growTime < 0f) NormalPlayerSize();
 
-        if (shrinkTime > 0) shrinkTime -= Time.unscaledDeltaTime;
-        else if (shrinkTime < 0) NormalPlayerSize();
+        if (shrinkTime > 0f) shrinkTime -= Time.deltaTime / Time.timeScale;
+        else if (shrinkTime < 0f) NormalPlayerSize();
 
         ColorSwitchHandler();
     }
@@ -108,14 +108,14 @@ public class PlayerCollisions : MonoBehaviour
 
     void ShieldPlayer()
     {
-        fireOn = false; fireTime = 0;
+        fireOn = false; fireTime = 0f;
         shieldOn = true;
         shieldTime += powerupTimeLength;
     }
 
     void DoubleTimeSpeed()
     {
-        halveTimeTime = 0;
+        halveTimeTime = 0f;
         playerMvt.moveSpeed *= Time.timeScale;
         Time.timeScale = 2f;
         Time.fixedDeltaTime = Time.timeScale * 0.02f;
@@ -124,7 +124,7 @@ public class PlayerCollisions : MonoBehaviour
     }
     void HalveTimeSpeed()
     {
-        doubleTimeTime = 0;
+        doubleTimeTime = 0f;
         playerMvt.moveSpeed *= Time.timeScale;
         Time.timeScale = 0.1f;
         Time.fixedDeltaTime = Time.timeScale * 0.02f;
@@ -141,58 +141,58 @@ public class PlayerCollisions : MonoBehaviour
 
     void PlayerBurnsBullets()
     {
-        shieldOn = false; shieldTime = 0;
+        shieldOn = false; shieldTime = 0f;
         fireOn = true;
         fireTime += powerupTimeLength;
     }
 
     void ShrinkPlayer()
     {
-        growTime = 0;
+        growTime = 0f;
         transform.localScale = new Vector2(0.2f, 0.2f);
         shrinkTime += powerupTimeLength;
     }
     void GrowPlayer()
     {
-        shrinkTime = 0;
+        shrinkTime = 0f;
         transform.localScale = new Vector2(0.8f, 0.8f);
         growTime += powerupTimeLength;
     }
 
     void SpeedUpPlayer()
     {
-        slowDownTime = 0;
-        playerMvt.moveSpeed = 15f / Time.timeScale;
+        slowDownTime = 0f;
+        playerMvt.moveSpeed = 12f / Time.timeScale;
         speedUpTime += powerupTimeLength;
     }
     void SlowDownPlayer()
     {
-        speedUpTime = 0;
-        playerMvt.moveSpeed = 5f / Time.timeScale;
+        speedUpTime = 0f;
+        playerMvt.moveSpeed = 2f / Time.timeScale;
         slowDownTime += powerupTimeLength;
     }
 
     public void ShieldOff()
     {
         shieldOn = false;
-        shieldTime = 0;
+        shieldTime = 0f;
     }
     public void FireOff()
     {
         fireOn = false;
-        fireTime = 0;
+        fireTime = 0f;
     }
     public void NormalPlayerSpeed()
     {
-        playerMvt.moveSpeed = 10f / Time.timeScale;
-        speedUpTime = 0;
-        slowDownTime = 0;
+        playerMvt.moveSpeed = 7f / Time.timeScale;
+        speedUpTime = 0f;
+        slowDownTime = 0f;
     }
     public void NormalPlayerSize()
     {
         transform.localScale = new Vector2(0.5f, 0.5f);
-        growTime = 0;
-        shrinkTime = 0;
+        growTime = 0f;
+        shrinkTime = 0f;
     }
     public void NormalTimeSpeed()
     {
@@ -200,8 +200,8 @@ public class PlayerCollisions : MonoBehaviour
         Time.timeScale = 1f;
         Time.fixedDeltaTime = 0.02f;
         playerMvt.moveSpeed /= Time.timeScale;
-        doubleTimeTime = 0;
-        halveTimeTime = 0;
+        doubleTimeTime = 0f;
+        halveTimeTime = 0f;
     }
 
     void ColorSwitchHandler()
@@ -219,7 +219,7 @@ public class PlayerCollisions : MonoBehaviour
         powerupTimes.Sort();
         powerupTimes.Reverse();
 
-        if (powerupTimes[0] > 0)
+        if (powerupTimes[0] > 0f)
         {
             Color selectedColor = Color.black;
             if (powerupTimes[0] == shieldTime) selectedColor = shieldColor;
@@ -236,7 +236,7 @@ public class PlayerCollisions : MonoBehaviour
 
         for (int i = 1; i < powerupTimes.Count - 4; i++) // 4 because 4 powerups cancel other four. otherwise i would consider them all
         {
-            if (powerupTimes[i] > 0)
+            if (powerupTimes[i] > 0f)
             {
                 Color childColor = Color.black;
                 if (powerupTimes[i] == shieldTime) childColor = shieldColor;

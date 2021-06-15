@@ -4,9 +4,9 @@ using UnityEngine;
 
 public class PlayerMvt : MonoBehaviour
 {
-    public float moveSpeed = 10f;
-    private Rigidbody2D playerRb;
-    private Vector2 moveDir;
+    public float moveSpeed = 7f;
+    Rigidbody2D playerRb;
+    Vector2 moveDir;
 
     // Start is called before the first frame update
     void Start()
@@ -27,8 +27,8 @@ public class PlayerMvt : MonoBehaviour
 
     void ProcessInputs()
     {
-        float moveX = Input.GetAxis("Horizontal");
-        float moveY = Input.GetAxis("Vertical");
+        float moveX = Input.GetAxisRaw("Horizontal");
+        float moveY = Input.GetAxisRaw("Vertical");
         moveDir = new Vector2(moveX, moveY);
     }
 

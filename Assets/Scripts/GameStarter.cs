@@ -7,8 +7,8 @@ public class GameStarter : MonoBehaviour
     public GameObject player, bullet;
     public AdjustWalls adjustWalls;
     public PowerupSpawner powerupSpawner;
-    private System.Random random = new System.Random();
-    private float enablePowerupsTime = 13f;
+    System.Random random = new System.Random();
+    float enablePowerupsTime = 13f;
 
     // Start is called before the first frame update
     void Start()
@@ -16,9 +16,9 @@ public class GameStarter : MonoBehaviour
         int maxX = (int)adjustWalls.cameraWidth;
         int maxY = (int)adjustWalls.cameraHeight;
 
-        bullet.transform.position = new Vector2(random.Next(-maxX + 1, maxX - 1), random.Next(-maxY + 1, maxY - 1));
+        bullet.transform.position = new Vector2(random.Next(-maxX + 1, maxX), random.Next(-maxY + 1, maxY));
         while (Vector2.Distance(bullet.transform.position, player.transform.position) < 3f)
-            bullet.transform.position = new Vector2(random.Next(-maxX + 1, maxX - 1), random.Next(-maxY + 1, maxY - 1));
+            bullet.transform.position = new Vector2(random.Next(-maxX + 1, maxX), random.Next(-maxY + 1, maxY));
     }
 
     private void FixedUpdate()

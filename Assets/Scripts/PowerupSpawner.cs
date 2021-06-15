@@ -5,9 +5,9 @@ using UnityEngine;
 public class PowerupSpawner : MonoBehaviour
 {
     public AdjustWalls adjustWalls;
-    private System.Random random = new System.Random();
-    private float[] spawnTimes;
-    private float spawnTime;
+    System.Random random = new System.Random();
+    float[] spawnTimes;
+    float spawnTime;
 
     int maxX;
     int maxY;
@@ -22,18 +22,18 @@ public class PowerupSpawner : MonoBehaviour
         maxY = (int)adjustWalls.cameraHeight;
 
         Instantiate(transform.GetChild(random.Next(0, transform.childCount)), 
-            new Vector2(random.Next(-maxX + 1, maxX - 1), random.Next(-maxY + 1, maxY - 1)),
+            new Vector2(random.Next(-maxX + 1, maxX), random.Next(-maxY + 1, maxY)),
             transform.rotation);
     }
 
     private void FixedUpdate()
     {
-        if (spawnTime > 0) spawnTime -= Time.deltaTime;
+        if (spawnTime > 0) spawnTime -= Time.deltaTime / Time.timeScale;
         else
         {
             for (int i = 0; i < random.Next(1, 5); i++)
                 Instantiate(transform.GetChild(random.Next(0, transform.childCount)),
-                    new Vector2(random.Next(-maxX + 1, maxX - 1), random.Next(-maxY + 1, maxY - 1)),
+                    new Vector2(random.Next(-maxX + 1, maxX), random.Next(-maxY + 1, maxY)),
                     transform.rotation);  
             spawnTime = spawnTimes[random.Next(0, spawnTimes.Length)];
         }
