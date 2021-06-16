@@ -51,12 +51,6 @@ public class PlayerCollisions : MonoBehaviour
         halveTimeColor = GameObject.Find("Time/2").GetComponent<SpriteRenderer>().color;
     }
 
-    // Update is called once per frame
-    void Update()
-    {
-        if (playerHealth < 1) Destroy(gameObject);
-    }
-
     private void FixedUpdate()
     {
         if (shieldTime > 0f) shieldTime -= Time.deltaTime / Time.timeScale;
@@ -84,6 +78,8 @@ public class PlayerCollisions : MonoBehaviour
         else if (shrinkTime < 0f) NormalPlayerSize();
 
         ColorSwitchHandler();
+
+        if (playerHealth < 1) Destroy(gameObject);
     }
 
     private void OnCollisionEnter2D(Collision2D col)

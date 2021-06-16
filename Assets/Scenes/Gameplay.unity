@@ -425,6 +425,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 83c1f4c07b3c2ca4dabfd14ff371d778, type: 3}
+--- !u!212 &1825137575 stripped
+SpriteRenderer:
+  m_CorrespondingSourceObject: {fileID: 3185976034405040899, guid: cb8117782d14cb2498bc9aff37b0576c, type: 3}
+  m_PrefabInstance: {fileID: 3185976034821336727}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1961691072 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 5711188717705272651, guid: e961f7c4208e3b644994f13e84eca4ba, type: 3}
@@ -636,6 +641,10 @@ PrefabInstance:
       propertyPath: outerCircle
       value: 
       objectReference: {fileID: 1042670330}
+    - target: {fileID: 8887141781888940368, guid: e961f7c4208e3b644994f13e84eca4ba, type: 3}
+      propertyPath: wallSpriteR
+      value: 
+      objectReference: {fileID: 1825137575}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: e961f7c4208e3b644994f13e84eca4ba, type: 3}
 --- !u!1001 &3185976034821336727
