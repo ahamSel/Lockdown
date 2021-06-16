@@ -42,5 +42,10 @@ public class UIScript : MonoBehaviour
         pausePanel.SetActive(false);
     }
 
-    public void ExitToStart() => SceneManager.LoadScene("Start");
+    public void ExitToStart() 
+    {
+        Time.timeScale = 1f;
+        Time.fixedDeltaTime = 0.02f;
+        SceneManager.LoadScene("Start");
+    } 
 }

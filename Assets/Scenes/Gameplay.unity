@@ -446,6 +446,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 246a2d316810a1742b2fa88c4df6e9cb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!4 &1961691080 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 4940391895350541031, guid: e961f7c4208e3b644994f13e84eca4ba, type: 3}
+  m_PrefabInstance: {fileID: 2772092229637838789}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1969025244 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 8075856708298854868, guid: 9246d738b7c858142926363e0640a2e5, type: 3}
@@ -641,7 +646,15 @@ PrefabInstance:
       propertyPath: outerCircle
       value: 
       objectReference: {fileID: 1042670330}
-    - target: {fileID: 8887141781888940368, guid: e961f7c4208e3b644994f13e84eca4ba, type: 3}
+    - target: {fileID: 7238898676817375678, guid: e961f7c4208e3b644994f13e84eca4ba, type: 3}
+      propertyPath: adjustWalls
+      value: 
+      objectReference: {fileID: 213323249}
+    - target: {fileID: 8859671941258233418, guid: e961f7c4208e3b644994f13e84eca4ba, type: 3}
+      propertyPath: adjustWalls
+      value: 
+      objectReference: {fileID: 213323249}
+    - target: {fileID: 8859671941258233418, guid: e961f7c4208e3b644994f13e84eca4ba, type: 3}
       propertyPath: wallSpriteR
       value: 
       objectReference: {fileID: 1825137575}
@@ -698,6 +711,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 3185976034628869729, guid: cb8117782d14cb2498bc9aff37b0576c, type: 3}
+      propertyPath: player
+      value: 
+      objectReference: {fileID: 1961691080}
     - target: {fileID: 3185976034628869730, guid: cb8117782d14cb2498bc9aff37b0576c, type: 3}
       propertyPath: m_Name
       value: Walls
