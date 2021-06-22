@@ -39,7 +39,7 @@ public class BulletBehaviour : MonoBehaviour
 
         timeToSplit -= Time.deltaTime;
         if (timeToSplit > 0) transform.localScale += new Vector3(Time.deltaTime, Time.deltaTime) / 30;
-        else
+        else if (UIScript.bulletCount < 729)
         {
             timeToSplit = 10f;
             for (int i = 0; i < subBullets; i++)
@@ -48,7 +48,8 @@ public class BulletBehaviour : MonoBehaviour
                 subBullet.transform.Rotate(0, 0, random.Next(0, 360));
                 subBullet.transform.localScale = new Vector2(0.2f, 0.2f);
             }
-            if (player) uiScript.bulletCount += subBullets;
+            UIScript.bulletCount--; UIScript.bulletCount += subBullets;
+            if (player) uiScript.score += subBullets;
             Destroy(gameObject);
         }
     }

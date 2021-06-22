@@ -13,7 +13,13 @@ public class UIScript : MonoBehaviour
     public Text healthText, scoreText, bestScoreText;
     
     float keepTimeSpeed;
-    public int bulletCount = 1;
+    public int score = 1;
+    public static int bulletCount = 1;
+
+    private void Start()
+    {
+        bulletCount = 1;
+    }
 
     // Update is called once per frame
     void Update()
@@ -23,10 +29,12 @@ public class UIScript : MonoBehaviour
             else ResumeGame();
 
         healthText.text = $"HP : {playerColStats.playerHealth}";
-        scoreText.text = $"{bulletCount}";
+        scoreText.text = $"{score}";
 
-        if (PlayerPrefs.GetInt("BestScore", 0) < bulletCount) PlayerPrefs.SetInt("BestScore", bulletCount);
+        if (PlayerPrefs.GetInt("BestScore", 0) < score) PlayerPrefs.SetInt("BestScore", score);
         bestScoreText.text = $"Best Score: {PlayerPrefs.GetInt("BestScore")}";
+
+        Debug.Log(bulletCount);
     }
 
     public void PauseGame()

@@ -86,7 +86,11 @@ public class PlayerCollisions : MonoBehaviour
     {
         if (col.gameObject.CompareTag("Bullet"))
         {
-            if (fireOn) Destroy(col.gameObject);
+            if (fireOn) { 
+                Destroy(col.gameObject);
+                UIScript.bulletCount--;
+            }
+
             if (!fireOn && !shieldOn) playerHealth--;
         }
     }
@@ -133,6 +137,7 @@ public class PlayerCollisions : MonoBehaviour
         GameObject[] bullets = GameObject.FindGameObjectsWithTag("Bullet");
         for (int i = 3; i < bullets.Length; i++)
             Destroy(bullets[i]);
+        UIScript.bulletCount = 3;
     }
 
     void PlayerBurnsBullets()
