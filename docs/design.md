@@ -1,15 +1,15 @@
 # Game Without Art — Web Remake Design
 
 Date: 2026-10-03
-Status: Approved in chat, pending written-spec review
+Status: Built and shipped (2026-10)
 
 ## Goal
 
-Rebuild the 2021 Unity game "Game Without Art" (repo `Lockdown`, itch page `aaess.itch.io/game-without-art`) as a browser game that feels clearly better while staying recognisably the same game. "No art" is the brand: everything is plain shapes and flat colours; polish comes from motion, feedback, and feel. Ship as an itch.io HTML5 upload.
+Rebuild the 2021 Unity game "Game Without Art" (repo `ahamSel/game-without-art`, formerly `Lockdown`; itch page `ahamsel.itch.io/game-without-art`) as a browser game that feels clearly better while staying recognisably the same game. "No art" is the brand: everything is plain shapes and flat colours; polish comes from motion, feedback, and feel. Ship as an itch.io HTML5 upload.
 
 ## Constraints
 
-- Lives in `web/` in this repo. The Unity project is left untouched.
+- Lives in `web/` in this repo. The 2021 Unity project (now in `unity/`) is left as it was.
 - TypeScript + Canvas 2D + Vite. No runtime dependencies. Dev dependencies: `vite`, `typescript`, `vitest`.
 - Works on desktop (keyboard) and mobile browsers (touch drag joystick).
 - Original palette is the brand and is preserved exactly (see Palette).

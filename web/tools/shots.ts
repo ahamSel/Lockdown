@@ -106,27 +106,6 @@ async function save(canvas: HTMLCanvasElement, name: string) {
   log(`${await res.text()} (${canvas.width}×${canvas.height})`);
 }
 
-async function cover() {
-  const W = 630;
-  const H = 500;
-  const s = stage(W, H);
-  const rand = prng(42);
-  const events: SimEvent[] = [];
-  // Keep the title band and the player's surroundings clear.
-  const keepOut = (x: number, y: number) => (y > 1.2 && y < 3.6) || Math.hypot(x + 0.4, y + 1.6) < 1.3;
-  scatter(s.world, 34, rand, keepOut);
-  split(s.world, events, 2.6, -0.4);
-  split(s.world, events, -3.4, -3.2);
-  pickup(s.world, 'fire', -2.2, -0.6);
-  pickup(s.world, 'shield', 3.9, -2.8);
-  pickup(s.world, 'timeFast', 1.4, -3.5);
-  s.world.player.x = s.world.player.px = -0.4;
-  s.world.player.y = s.world.player.py = -1.6;
-  render(s, events);
-  title(s.canvas, W, H * 0.255, 62);
-  await save(s.canvas, 'cover.png');
-}
-
 /** A bare canvas at DPR× resolution, for art that isn't a game scene. */
 function plainCanvas(cssW: number, cssH: number) {
   const canvas = document.createElement('canvas');
@@ -220,103 +199,6 @@ async function embedBackground() {
   await save(out, 'itch-embed-bg.png');
 }
 
-/** Logo drafts: 512×512 icons plus tiny previews side by side. */
-async function logos() {
-  const S = 512;
-  const BLUE = CONFIG.colors.background;
-  const RED = CONFIG.colors.ball;
-  const GREEN = CONFIG.colors.player;
-  const ball = (ctx: CanvasRenderingContext2D, x: number, y: number, r: number, sx = 1, sy = 1, rot = 0) => {
-    ctx.save();
-    ctx.translate(x, y);
-    ctx.rotate(rot);
-    ctx.scale(sx, sy);
-    ctx.beginPath();
-    ctx.arc(0, 0, r, 0, Math.PI * 2);
-    ctx.fillStyle = RED;
-    ctx.fill();
-    ctx.restore();
-  };
-  const variants: Record<string, (ctx: CanvasRenderingContext2D) => void> = {
-    // A: the arena. White walls, the square in the middle, balls closing in.
-    arena: (ctx) => {
-      ctx.fillStyle = '#ffffff';
-      ctx.fillRect(0, 0, S, S);
-      ctx.fillStyle = BLUE;
-      ctx.fillRect(28, 28, S - 56, S - 56);
-      ctx.fillStyle = GREEN;
-      ctx.fillRect(S / 2 - 62, S / 2 - 62, 124, 124);
-      ball(ctx, 118, 132, 44, 1.18, 0.85, 0.7);
-      ball(ctx, 396, 150, 30, 1.18, 0.85, 2.4);
-      ball(ctx, 360, 392, 52, 1.18, 0.85, -2.2);
-    },
-    // B: one ball about to hit. The square, a single big ball, and a white motion streak.
-    nearMiss: (ctx) => {
-      ctx.fillStyle = BLUE;
-      ctx.fillRect(0, 0, S, S);
-      ctx.fillStyle = GREEN;
-      ctx.fillRect(S / 2 - 96, S / 2 - 40, 150, 150);
-      ctx.globalAlpha = 0.35;
-      ctx.strokeStyle = RED;
-      ctx.lineCap = 'round';
-      ctx.lineWidth = 70;
-      ctx.beginPath();
-      ctx.moveTo(470, 40);
-      ctx.lineTo(380, 130);
-      ctx.stroke();
-      ctx.globalAlpha = 1;
-      ball(ctx, 360, 150, 62, 1.2, 0.84, -0.78);
-    },
-    // C: minimal. Just the square, framed, with one small ball for scale.
-    minimal: (ctx) => {
-      ctx.fillStyle = BLUE;
-      ctx.fillRect(0, 0, S, S);
-      ctx.fillStyle = GREEN;
-      ctx.fillRect(S / 2 - 110, S / 2 - 110, 220, 220);
-      ball(ctx, 408, 104, 40);
-    },
-  };
-  for (const [name, draw] of Object.entries(variants)) {
-    const c = document.createElement('canvas');
-    c.width = S;
-    c.height = S;
-    draw(c.getContext('2d')!);
-    await save(c, `logo-${name}.png`);
-    if (name === 'arena') {
-      // Home-screen icon (iOS wants a 180×180 PNG).
-      const touch = document.createElement('canvas');
-      touch.width = 180;
-      touch.height = 180;
-      const tctx = touch.getContext('2d')!;
-      tctx.imageSmoothingQuality = 'high';
-      tctx.drawImage(c, 0, 0, 180, 180);
-      await save(touch, 'apple-touch-icon.png');
-    }
-  }
-  // Preview sheet: each variant at 128, 48, 32 and 16 px, as it would appear in tabs and home screens.
-  const sheet = document.createElement('canvas');
-  const sizes = [128, 48, 32, 16];
-  sheet.width = 3 * 260;
-  sheet.height = 170;
-  const sctx = sheet.getContext('2d')!;
-  sctx.fillStyle = '#2b2b2b';
-  sctx.fillRect(0, 0, sheet.width, sheet.height);
-  let col = 0;
-  for (const [, draw] of Object.entries(variants)) {
-    const c = document.createElement('canvas');
-    c.width = S;
-    c.height = S;
-    draw(c.getContext('2d')!);
-    let x = col * 260 + 12;
-    for (const size of sizes) {
-      sctx.drawImage(c, x, 20 + (128 - size) / 2, size, size);
-      x += size + 10;
-    }
-    col++;
-  }
-  await save(sheet, 'logo-previews.png');
-}
-
 /**
  * Icon-style cover (like DotDodge's): logo A centred on white. itch derives the page's tab icon from a
  * 32×32 centre crop of the cover, so the logo has to sit in the middle square.
@@ -360,7 +242,7 @@ async function coverIcon() {
 async function main() {
   await document.fonts.ready;
   const only = new URLSearchParams(location.search).get('only');
-  const jobs: Record<string, () => Promise<void>> = { cover, coverIcon, banner, backgroundTile, embedBackground, logos };
+  const jobs: Record<string, () => Promise<void>> = { coverIcon, banner, backgroundTile, embedBackground };
   for (const [name, job] of Object.entries(jobs)) if (!only || only === name) await job();
   log('done');
 }
