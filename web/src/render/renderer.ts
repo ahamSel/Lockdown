@@ -8,8 +8,9 @@ import { approach, clamp01, easeOutBack, hexToRgb, lerp, mixRgb, rgbToCss, type 
 const TAU = Math.PI * 2;
 const SQUASH_TIME = 0.12;
 const BG = hexToRgb(CONFIG.colors.background);
-const WARM = hexToRgb(POWERUPS.timeFast.color);
-const COOL = hexToRgb(POWERUPS.timeSlow.color);
+// Time tints stay in the blue family: mixing in the yellow/purple powerup colours turns the field grey.
+const FAST_BG = hexToRgb('#1f8bff');
+const SLOW_BG = hexToRgb('#2a2fd6');
 const PLAYER = hexToRgb(CONFIG.colors.player);
 
 export interface Renderer {
@@ -70,17 +71,20 @@ export function createRenderer(canvas: HTMLCanvasElement): Renderer {
   function drawBalls(world: World, alpha: number, timeScale: number) {
     ctx.fillStyle = CONFIG.colors.ball;
     if (timeScale > 1) {
-      ctx.globalAlpha = 0.25;
-      ctx.beginPath();
+      // Motion streaks: a short round-capped stroke behind each ball.
+      ctx.globalAlpha = 0.3;
+      ctx.strokeStyle = CONFIG.colors.ball;
+      ctx.lineCap = 'round';
       for (const b of world.balls) {
         if (!b.active) continue;
-        const x = lerp(b.px, b.x, alpha) - b.vx * 0.03;
-        const y = lerp(b.py, b.y, alpha) - b.vy * 0.03;
-        const r = (b.scale / 2) * 0.8;
-        ctx.moveTo(x + r, y);
-        ctx.arc(x, y, r, 0, TAU);
+        const x = lerp(b.px, b.x, alpha);
+        const y = lerp(b.py, b.y, alpha);
+        ctx.lineWidth = b.scale * 0.8;
+        ctx.beginPath();
+        ctx.moveTo(x, y);
+        ctx.lineTo(x - b.vx * 0.045, y - b.vy * 0.045);
+        ctx.stroke();
       }
-      ctx.fill();
       ctx.globalAlpha = 1;
     }
     ctx.beginPath();
@@ -173,7 +177,7 @@ export function createRenderer(canvas: HTMLCanvasElement): Renderer {
       tint = approach(tint, timeScale > 1 ? 1 : timeScale < 1 ? -1 : 0, 4, dt);
 
       ctx.setTransform(1, 0, 0, 1, 0, 0);
-      ctx.fillStyle = rgbToCss(mixRgb(BG, tint > 0 ? WARM : COOL, Math.abs(tint) * 0.16));
+      ctx.fillStyle = rgbToCss(mixRgb(BG, tint > 0 ? FAST_BG : SLOW_BG, Math.abs(tint)));
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
       // World space: units, +y up, origin at the centre, plus screen shake.

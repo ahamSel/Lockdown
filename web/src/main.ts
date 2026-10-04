@@ -1,41 +1,237 @@
-// Temporary harness for Task 5: a playable world with no UI. Replaced in Task 8.
+import './ui/styles.css';
+import { createSfx } from './audio/sfx';
 import { CONFIG } from './game/config';
+import { POWERUP_IDS } from './game/powerups';
 import { createWorld, drainEvents, resizeWorld, step } from './game/sim';
+import type { SimEvent, Vec, World } from './game/types';
 import { createKeyboard } from './input/keyboard';
 import { createJoystick } from './input/touch';
 import { planSteps } from './loop';
 import { createFx } from './render/fx';
 import { createRenderer } from './render/renderer';
+import { readBool, readNumber, writeBool, writeNumber } from './storage';
+import { createUI, type ScreenName, type UIAction } from './ui/screens';
+
+const ZERO: Vec = { x: 0, y: 0 };
+const GAME_OVER_DELAY = 1.2;
 
 const canvas = document.getElementById('game') as HTMLCanvasElement;
+const ui = createUI(document.getElementById('ui')!);
 const renderer = createRenderer(canvas);
-const fx = createFx(false);
+const fx = createFx(matchMedia('(prefers-reduced-motion: reduce)').matches);
 const keyboard = createKeyboard(window);
 const joystick = createJoystick(canvas);
-joystick.setEnabled(true);
+const sfx = createSfx();
 
-let world = createWorld({ aspect: renderer.aspect() });
+let screen: ScreenName = 'title';
+let world: World = createWorld({ aspect: renderer.aspect(), demo: true });
+let best = readNumber('best', 0);
+let muted = readBool('muted', false);
 let acc = 0;
 let alpha = 0;
 let last = performance.now();
+let gameOverIn = -1;
 
-window.addEventListener('resize', () => resizeWorld(world, renderer.resize()));
-window.addEventListener('keydown', (e) => {
-  if (e.code === 'KeyR') world = createWorld({ aspect: renderer.aspect() });
-});
+if (import.meta.env.DEV) {
+  (window as unknown as { gwa: unknown }).gwa = { world: () => world };
+}
+
+function setScreen(next: ScreenName) {
+  screen = next;
+  ui.show(next);
+  joystick.setEnabled(next === 'playing');
+}
+
+function saveBest() {
+  if (!world.demo && world.score > best) {
+    best = world.score;
+    writeNumber('best', best);
+  }
+}
+
+function startGame() {
+  saveBest();
+  world = createWorld({ aspect: renderer.aspect() });
+  acc = 0;
+  gameOverIn = -1;
+  fx.reset();
+  setScreen('playing');
+}
+
+function toMenu() {
+  saveBest();
+  world = createWorld({ aspect: renderer.aspect(), demo: true });
+  gameOverIn = -1;
+  fx.reset();
+  ui.setBest(best);
+  setScreen('title');
+}
+
+function pause() {
+  if (screen !== 'playing') return;
+  saveBest();
+  setScreen('paused');
+}
+
+function resume() {
+  if (screen !== 'paused') return;
+  last = performance.now();
+  setScreen('playing');
+}
+
+function showGameOver() {
+  const isNewBest = world.score > best;
+  saveBest();
+  ui.gameOver(world.score, best, isNewBest);
+  setScreen('gameover');
+}
+
+function toggleMute() {
+  muted = !muted;
+  sfx.setMuted(muted);
+  ui.setMuted(muted);
+  writeBool('muted', muted);
+}
+
+function act(action: UIAction) {
+  sfx.unlock();
+  sfx.play('click');
+  switch (action) {
+    case 'play':
+    case 'restart':
+      startGame();
+      break;
+    case 'howto':
+      setScreen('howto');
+      break;
+    case 'back':
+      setScreen('title');
+      break;
+    case 'menu':
+      toMenu();
+      break;
+    case 'pause':
+      pause();
+      break;
+    case 'resume':
+      resume();
+      break;
+    case 'toggleMute':
+      toggleMute();
+      break;
+  }
+}
+
+function handleEvents(events: SimEvent[]) {
+  if (events.length === 0) return;
+  fx.handle(events, world);
+  if (world.demo) return; // the title screen stays quiet
+  for (const e of events) {
+    switch (e.type) {
+      case 'split':
+        sfx.play('split');
+        break;
+      case 'bounce':
+        if (world.balls.length <= 27) sfx.play('bounce');
+        break;
+      case 'hit':
+        sfx.play('hit');
+        ui.pulseHp();
+        break;
+      case 'blocked':
+        sfx.play('blocked');
+        break;
+      case 'burn':
+        sfx.play('burn');
+        break;
+      case 'pickup':
+        sfx.play('pickup', POWERUP_IDS.indexOf(e.kind) * 2);
+        break;
+      case 'expire':
+        sfx.play('expire');
+        break;
+      case 'spawnBall':
+        sfx.play('spawn');
+        break;
+      case 'cleared':
+        sfx.play('cleared');
+        break;
+      case 'death':
+        sfx.play('death');
+        gameOverIn = GAME_OVER_DELAY;
+        break;
+      case 'raze':
+      case 'spawnPickup':
+        break;
+    }
+  }
+}
+
+function currentInput(): Vec {
+  if (screen !== 'playing') return ZERO;
+  const kb = keyboard.dir();
+  return kb.x !== 0 || kb.y !== 0 ? kb : joystick.dir();
+}
 
 function frame(now: number) {
-  const dt = Math.min((now - last) / 1000, CONFIG.maxFrame);
+  const frameDt = Math.min((now - last) / 1000, CONFIG.maxFrame);
   last = now;
-  const kb = keyboard.dir();
-  const input = kb.x !== 0 || kb.y !== 0 ? kb : joystick.dir();
-  const plan = planSteps(acc, dt, CONFIG.step, CONFIG.maxFrame);
-  for (let i = 0; i < plan.steps; i++) step(world, input, CONFIG.step);
-  acc = plan.acc;
-  alpha = plan.alpha;
-  fx.handle(drainEvents(world), world);
-  fx.update(dt, world);
-  renderer.draw(world, fx, alpha, joystick.view(), dt);
+  const running = screen !== 'paused';
+  if (running) {
+    const input = currentInput();
+    const plan = planSteps(acc, frameDt, CONFIG.step, CONFIG.maxFrame);
+    for (let i = 0; i < plan.steps; i++) step(world, input, CONFIG.step);
+    acc = plan.acc;
+    alpha = plan.alpha;
+    handleEvents(drainEvents(world));
+    fx.update(frameDt, world);
+    if (gameOverIn > 0) {
+      gameOverIn -= frameDt;
+      if (gameOverIn <= 0) showGameOver();
+    }
+  }
+  if (!world.demo) ui.hud(world, Math.max(best, world.score));
+  renderer.draw(world, fx, alpha, screen === 'playing' ? joystick.view() : null, running ? frameDt : 0);
   requestAnimationFrame(frame);
 }
+
+ui.onAction(act);
+window.addEventListener('keydown', (e) => {
+  sfx.unlock();
+  if (e.repeat) return;
+  const onButton = (e.target as Element | null)?.closest?.('button');
+  switch (e.code) {
+    case 'Escape':
+    case 'KeyP':
+      if (screen === 'playing') pause();
+      else if (screen === 'paused') resume();
+      else if (screen === 'howto') setScreen('title');
+      break;
+    case 'KeyR':
+      if (screen === 'playing' || screen === 'paused' || screen === 'gameover') startGame();
+      break;
+    case 'Enter':
+    case 'Space':
+      if (onButton) return; // the button's own click handles it
+      e.preventDefault();
+      if (screen === 'title' || screen === 'gameover') startGame();
+      else if (screen === 'paused') resume();
+      break;
+    case 'KeyM':
+      toggleMute();
+      break;
+  }
+});
+window.addEventListener('pointerdown', () => sfx.unlock());
+window.addEventListener('resize', () => resizeWorld(world, renderer.resize()));
+window.addEventListener('blur', pause);
+window.addEventListener('pagehide', saveBest);
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) pause();
+});
+
+sfx.setMuted(muted);
+ui.setMuted(muted);
+ui.setBest(best);
+setScreen('title');
 requestAnimationFrame(frame);
