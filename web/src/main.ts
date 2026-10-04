@@ -8,6 +8,7 @@ import type { SimEvent, Vec, World } from './game/types';
 import { createKeyboard } from './input/keyboard';
 import { shortcutFor } from './input/shortcuts';
 import { createJoystick } from './input/touch';
+import { replayInput, type Replay } from './dev/replay';
 import { planSteps } from './loop';
 import { createFx } from './render/fx';
 import { createRenderer } from './render/renderer';
@@ -39,7 +40,17 @@ let gameOverIn = -1;
 let hitStop = 0;
 
 if (import.meta.env.DEV) {
-  (window as unknown as { gwa: unknown }).gwa = { world: () => world };
+  (window as unknown as { gwa: unknown }).gwa = { world: () => world, aspect: () => renderer.aspect() };
+}
+
+// Dev-only replay: ?replay=run plays the planned run in tools/capture/run.json (for the README preview).
+let replay: Replay | null = null;
+let replayStep = 0;
+const replayName = import.meta.env.DEV ? new URLSearchParams(location.search).get('replay') : null;
+if (replayName) {
+  void fetch(`/tools/capture/${replayName}.json`)
+    .then((r) => r.json())
+    .then((r: Replay) => (replay = r));
 }
 
 function setScreen(next: ScreenName) {
@@ -54,7 +65,8 @@ function saveBest() {
 
 function startGame() {
   saveBest();
-  world = createWorld({ aspect: renderer.aspect() });
+  world = replay ? createWorld({ aspect: replay.aspect, seed: replay.seed }) : createWorld({ aspect: renderer.aspect() });
+  replayStep = 0;
   best.startRun();
   acc = 0;
   hitStop = 0;
@@ -160,7 +172,7 @@ function frame(now: number) {
     } else {
       const input = currentInput();
       const plan = planSteps(acc, frameDt, CONFIG.step, CONFIG.maxFrame);
-      for (let i = 0; i < plan.steps; i++) step(world, input, CONFIG.step);
+      for (let i = 0; i < plan.steps; i++) step(world, replay && !world.demo ? replayInput(replay, replayStep++) : input, CONFIG.step);
       acc = plan.acc;
       alpha = plan.alpha;
     }

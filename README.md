@@ -4,7 +4,7 @@ Dodge the red balls. They keep splitting. Made during lockdown in 2021, rebuilt 
 
 ### [Play it on itch.io](https://ahamsel.itch.io/game-without-art)
 
-![Gameplay: the title, then the red balls splitting until the arena is full while the green square dodges](docs/preview.gif)
+![Gameplay: highlights from one real run: powerups stacking, the arena filling to 729 balls, Fire burning through them, then a Raze clearing the field](docs/preview.gif)
 
 ## How to play
 
@@ -27,6 +27,8 @@ npm test         # simulation tests
 npm run itch     # build + zip for itch.io (web/game-without-art.zip)
 ```
 
+The preview above is one real run: `web/tools/capture/plan.html` (on the tools server, `npx vite --config tools/vite.config.ts`) searches the actual simulation for a long run that dodges and goes for powerups, and saves the inputs to `tools/capture/run.json`; `/?replay=run` in the dev server makes the game play them step for step.
+
 To publish, upload `web/game-without-art.zip` to the itch page as an HTML5 game ("This file will be played in the browser"). A viewport around 960×600 with fullscreen enabled works well; mobile-friendly can be ticked.
 
 | Folder | What's in it |
@@ -35,7 +37,7 @@ To publish, upload `web/game-without-art.zip` to the itch page as an HTML5 game 
 | `web/src/render` | Canvas renderer and effects |
 | `web/src/ui`, `web/src/audio`, `web/src/input` | Screens, synthesised sound, keyboard and touch |
 | `web/tests` | Vitest tests |
-| `web/tools` | Generates the itch art (cover, banner, backgrounds) with the game's own renderer |
+| `web/tools` | Generates the itch art (cover, banner, backgrounds) with the game's own renderer, and plans the preview run (`tools/capture`) |
 | `web/marketing` | itch.io cover, banner, backgrounds, icons and screenshots |
 | `docs/design.md` | The design the rebuild follows |
 | `unity/` | The original 2021 Unity project |

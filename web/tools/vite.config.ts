@@ -6,6 +6,8 @@ import { fileURLToPath } from 'node:url';
 import { defineConfig } from 'vite';
 
 const outDir = join(dirname(fileURLToPath(import.meta.url)), '..', 'marketing');
+// Planned runs for the README preview (tools/capture) are saved next to the planner.
+const captureDir = join(dirname(fileURLToPath(import.meta.url)), 'capture');
 
 export default defineConfig({
   root: join(dirname(fileURLToPath(import.meta.url)), '..'),
@@ -15,12 +17,14 @@ export default defineConfig({
       name: 'save-shots',
       configureServer(server) {
         server.middlewares.use('/__save', (req, res) => {
-          const name = basename(new URL(req.url ?? '', 'http://local').searchParams.get('name') ?? 'shot.png');
+          const q = new URL(req.url ?? '', 'http://local').searchParams;
+          const name = basename(q.get('name') ?? 'shot.png');
+          const dir = q.get('dir') === 'capture' ? captureDir : outDir;
           const chunks: Buffer[] = [];
           req.on('data', (c: Buffer) => chunks.push(c));
           req.on('end', () => {
-            mkdirSync(outDir, { recursive: true });
-            writeFileSync(join(outDir, name), Buffer.concat(chunks));
+            mkdirSync(dir, { recursive: true });
+            writeFileSync(join(dir, name), Buffer.concat(chunks));
             res.end('saved ' + name);
           });
         });

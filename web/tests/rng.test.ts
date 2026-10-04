@@ -2,6 +2,14 @@ import { describe, expect, it } from 'vitest';
 import { createRng } from '../src/game/rng';
 
 describe('createRng', () => {
+  it('fork() continues from the same point without affecting the original', () => {
+    const a = createRng(7);
+    a.next();
+    const b = a.fork();
+    const fromFork = [b.next(), b.next(), b.next()];
+    expect([a.next(), a.next(), a.next()]).toEqual(fromFork);
+  });
+
   it('is deterministic for a given seed', () => {
     const a = createRng(42);
     const b = createRng(42);

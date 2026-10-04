@@ -5,6 +5,8 @@ export interface Rng {
   int(min: number, maxExclusive: number): number;
   pick<T>(items: readonly T[]): T;
   angle(): number;
+  /** An independent copy that continues from this exact point (for look-ahead in dev tools). */
+  fork(): Rng;
 }
 
 /** mulberry32: tiny, fast, and seedable so tests are deterministic. */
@@ -23,5 +25,6 @@ export function createRng(seed = Date.now()): Rng {
     int: (min, maxExclusive) => min + Math.floor(next() * (maxExclusive - min)),
     pick: (items) => items[Math.floor(next() * items.length)],
     angle: () => next() * Math.PI * 2,
+    fork: () => createRng(state),
   };
 }
