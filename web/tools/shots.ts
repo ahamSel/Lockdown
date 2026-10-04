@@ -127,9 +127,104 @@ async function cover() {
   await save(s.canvas, 'cover.png');
 }
 
+/** A bare canvas at DPR× resolution, for art that isn't a game scene. */
+function plainCanvas(cssW: number, cssH: number) {
+  const canvas = document.createElement('canvas');
+  canvas.width = cssW * DPR;
+  canvas.height = cssH * DPR;
+  canvas.style.width = `${cssW}px`;
+  canvas.style.height = `${cssH}px`;
+  canvas.style.background = CONFIG.colors.background;
+  document.body.append(canvas);
+  const ctx = canvas.getContext('2d')!;
+  ctx.scale(DPR, DPR);
+  return { canvas, ctx };
+}
+
+/** itch page banner: the title on a transparent background, flanked by a few balls and the player. */
+async function banner() {
+  const W = 960;
+  const H = 210;
+  const { canvas, ctx } = plainCanvas(W, H);
+  const rand = prng(11);
+  // Balls along both ends, kept clear of the title.
+  ctx.fillStyle = CONFIG.colors.ball;
+  for (let i = 0; i < 26; i++) {
+    const left = i % 2 === 0;
+    const x = left ? 16 + rand() * 120 : W - 20 - rand() * 120;
+    const y = 18 + rand() * (H - 36);
+    const r = 5 + rand() * 9;
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.fillStyle = CONFIG.colors.player;
+  ctx.fillRect(96, H * 0.4, 26, 26);
+  title(canvas, W, H * 0.47, 78);
+  await save(canvas, 'itch-banner.png');
+}
+
+/** Seamless page background tile: faint lighter-blue circles ("ghost balls"). */
+async function backgroundTile() {
+  const S = 480;
+  const { canvas, ctx } = plainCanvas(S, S);
+  ctx.fillStyle = CONFIG.colors.background;
+  ctx.fillRect(0, 0, S, S);
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
+  const rand = prng(23);
+  for (let i = 0; i < 22; i++) {
+    const x = rand() * S;
+    const y = rand() * S;
+    const r = 6 + rand() * 26;
+    // Draw wrapped copies so the tile repeats without seams.
+    for (const dx of [-S, 0, S])
+      for (const dy of [-S, 0, S]) {
+        ctx.beginPath();
+        ctx.arc(x + dx, y + dy, r, 0, Math.PI * 2);
+        ctx.fill();
+      }
+  }
+  await save(canvas, 'itch-background.png');
+}
+
+/**
+ * Shown behind itch's "Run game" button. itch draws it at its pixel size without scaling, so it is
+ * rendered at 2× and then scaled to exactly the embed size (1024×576). No title: the banner has it.
+ */
+async function embedBackground() {
+  const W = 1024;
+  const H = 576;
+  const s = stage(W, H);
+  const rand = prng(5);
+  const events: SimEvent[] = [];
+  const spots: [number, number][] = [[0, -2.8], [-4.6, -2.9], [4.4, -1.9], [6.6, 0.4], [5.6, 2.6], [-6.6, -0.6], [-5.2, 2.9]];
+  // Keep the middle clear for the Run game button, and keep balls off the pickups and splits.
+  const keepOut = (x: number, y: number) =>
+    (Math.abs(x) < 3.4 && Math.abs(y) < 1.5) || spots.some(([px, py]) => Math.hypot(x - px, y - py) < 1.1);
+  scatter(s.world, 46, rand, keepOut);
+  split(s.world, events, 5.6, 2.6);
+  split(s.world, events, -6.6, -0.6);
+  pickup(s.world, 'shield', -4.6, -2.9);
+  pickup(s.world, 'fire', 4.4, -1.9);
+  pickup(s.world, 'timeSlow', 6.6, 0.4);
+  pickup(s.world, 'health', -5.2, 2.9);
+  s.world.player.x = s.world.player.px = 0;
+  s.world.player.y = s.world.player.py = -2.8;
+  render(s, events);
+  const out = document.createElement('canvas');
+  out.width = W;
+  out.height = H;
+  const octx = out.getContext('2d')!;
+  octx.imageSmoothingQuality = 'high';
+  octx.drawImage(s.canvas, 0, 0, W, H);
+  await save(out, 'itch-embed-bg.png');
+}
+
 async function main() {
   await document.fonts.ready;
-  await cover();
+  const only = new URLSearchParams(location.search).get('only');
+  const jobs: Record<string, () => Promise<void>> = { cover, banner, backgroundTile, embedBackground };
+  for (const [name, job] of Object.entries(jobs)) if (!only || only === name) await job();
   log('done');
 }
 void main();
