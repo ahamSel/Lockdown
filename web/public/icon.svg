@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- The arena: white walls, the player square, red balls closing in. Tuned to read at 16px. -->
+  <rect width="64" height="64" fill="#ffffff"/>
+  <rect x="4" y="4" width="56" height="56" fill="#0063ff"/>
+  <rect x="23.5" y="23.5" width="17" height="17" fill="#00ff05"/>
+  <ellipse cx="15" cy="16.5" rx="7" ry="5.4" transform="rotate(40 15 16.5)" fill="#ff0c00"/>
+  <ellipse cx="49" cy="17.5" rx="5" ry="4" transform="rotate(137 49 17.5)" fill="#ff0c00"/>
+  <ellipse cx="45" cy="48" rx="8" ry="6.2" transform="rotate(-126 45 48)" fill="#ff0c00"/>
+</svg>
