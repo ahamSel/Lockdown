@@ -317,10 +317,50 @@ async function logos() {
   await save(sheet, 'logo-previews.png');
 }
 
+/**
+ * Icon-style cover (like DotDodge's): logo A centred on white. itch derives the page's tab icon from a
+ * 32×32 centre crop of the cover, so the logo has to sit in the middle square.
+ */
+async function coverIcon() {
+  const W = 1260;
+  const H = 1000;
+  const c = document.createElement('canvas');
+  c.width = W;
+  c.height = H;
+  const ctx = c.getContext('2d')!;
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, W, H);
+  // Logo A drawn at 1000×1000 in the centre (coordinates designed on a 512 grid).
+  const k = H / 512;
+  ctx.save();
+  ctx.translate((W - H) / 2, 0);
+  ctx.scale(k, k);
+  ctx.fillStyle = CONFIG.colors.background;
+  ctx.fillRect(28, 28, 512 - 56, 512 - 56);
+  ctx.fillStyle = CONFIG.colors.player;
+  ctx.fillRect(256 - 62, 256 - 62, 124, 124);
+  const ball = (x: number, y: number, r: number, rot: number) => {
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(rot);
+    ctx.scale(1.18, 0.85);
+    ctx.beginPath();
+    ctx.arc(0, 0, r, 0, Math.PI * 2);
+    ctx.fillStyle = CONFIG.colors.ball;
+    ctx.fill();
+    ctx.restore();
+  };
+  ball(118, 132, 44, 0.7);
+  ball(396, 150, 30, 2.4);
+  ball(360, 392, 52, -2.2);
+  ctx.restore();
+  await save(c, 'cover-icon.png');
+}
+
 async function main() {
   await document.fonts.ready;
   const only = new URLSearchParams(location.search).get('only');
-  const jobs: Record<string, () => Promise<void>> = { cover, banner, backgroundTile, embedBackground, logos };
+  const jobs: Record<string, () => Promise<void>> = { cover, coverIcon, banner, backgroundTile, embedBackground, logos };
   for (const [name, job] of Object.entries(jobs)) if (!only || only === name) await job();
   log('done');
 }
