@@ -3,14 +3,81 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#0063ff" />
+    <meta name="description" content="Dodge the red balls. They keep splitting. A game with no art, just shapes." />
     <title>Game Without Art</title>
-    <style>
-      html, body { margin: 0; height: 100%; overflow: hidden; background: #0063ff; }
-      #game { position: fixed; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
-    </style>
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' fill='%230063ff'/%3E%3Crect x='4' y='4' width='8' height='8' fill='%2300ff05'/%3E%3C/svg%3E"
+    />
   </head>
   <body>
-    <canvas id="game"></canvas>
+    <canvas id="game" aria-label="Game"></canvas>
+    <div id="ui">
+      <section class="screen" data-screen="title">
+        <h1 class="title"><span>Game</span> <span>Without</span> <span class="art">Art</span></h1>
+        <p class="tagline">Dodge the red balls. They keep splitting.</p>
+        <div class="menu">
+          <button class="primary" data-action="play">Play</button>
+          <button data-action="howto">How to play</button>
+        </div>
+        <p class="best" data-bind="titleBest"></p>
+      </section>
+
+      <section class="screen howto" data-screen="howto">
+        <h2>How to play</h2>
+        <div class="scroll">
+          <p class="lead">Try not to get hit by the red balls.</p>
+          <p class="controls">
+            <kbd>WASD</kbd> or <kbd>Arrows</kbd> to move · drag anywhere on touch screens · <kbd>Esc</kbd> pause ·
+            <kbd>R</kbd> restart · <kbd>M</kbd> mute
+          </p>
+          <h3>Powerups <small>Timed ones last 10 seconds, and time adds up.</small></h3>
+          <ul class="powerups" data-bind="powerups"></ul>
+        </div>
+        <button data-action="back">Back</button>
+      </section>
+
+      <section class="hud" data-screen="playing paused gameover">
+        <div class="hud-left">
+          <div class="hp"><span data-bind="hp">20</span><small>HP</small></div>
+          <div class="balls" data-bind="balls"></div>
+        </div>
+        <div class="score"><span data-bind="score">1</span></div>
+        <div class="hud-right">
+          <div class="hud-best" data-bind="best"></div>
+          <button class="icon-btn pause-btn" data-action="pause" aria-label="Pause"></button>
+        </div>
+        <div class="pills" data-bind="pills"></div>
+      </section>
+
+      <section class="screen overlay" data-screen="paused">
+        <h2>Paused</h2>
+        <div class="menu">
+          <button class="primary" data-action="resume">Resume</button>
+          <button data-action="restart">Restart</button>
+          <button data-action="menu">Menu</button>
+        </div>
+      </section>
+
+      <section class="screen overlay" data-screen="gameover">
+        <h2>Game over</h2>
+        <div class="final"><span data-bind="goScore">0</span></div>
+        <p class="best"><span data-bind="goBest"></span> <b class="new-best" data-bind="goNew">New best!</b></p>
+        <div class="menu">
+          <button class="primary" data-action="restart">Retry</button>
+          <button data-action="menu">Menu</button>
+        </div>
+      </section>
+
+      <button class="icon-btn mute-btn" data-action="toggleMute" aria-label="Toggle sound" aria-pressed="false">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path class="speaker" d="M4 9h4l5-4v14l-5-4H4z" />
+          <path class="wave" d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12" />
+          <path class="cross" d="M16 9l6 6M22 9l-6 6" />
+        </svg>
+      </button>
+    </div>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>
