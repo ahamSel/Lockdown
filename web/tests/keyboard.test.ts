@@ -42,4 +42,14 @@ describe('keyboard', () => {
     expect(key(t, 'keydown', 'ArrowDown').defaultPrevented).toBe(true);
     expect(key(t, 'keydown', 'KeyQ').defaultPrevented).toBe(false);
   });
+
+  it('lets arrow keys scroll when the game is not capturing them (How to play list)', () => {
+    const t = new EventTarget();
+    let capture = false;
+    const kb = createKeyboard(t, () => capture);
+    expect(key(t, 'keydown', 'ArrowDown').defaultPrevented).toBe(false);
+    capture = true;
+    expect(key(t, 'keydown', 'ArrowDown').defaultPrevented).toBe(true);
+    expect(kb.dir()).toEqual({ x: 0, y: -1 });
+  });
 });

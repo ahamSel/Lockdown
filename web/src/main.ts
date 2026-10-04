@@ -6,6 +6,7 @@ import { CONFIG } from './game/config';
 import { createWorld, drainEvents, resizeWorld, step } from './game/sim';
 import type { SimEvent, Vec, World } from './game/types';
 import { createKeyboard } from './input/keyboard';
+import { shortcutFor } from './input/shortcuts';
 import { createJoystick } from './input/touch';
 import { planSteps } from './loop';
 import { createFx } from './render/fx';
@@ -20,7 +21,8 @@ const canvas = document.getElementById('game') as HTMLCanvasElement;
 const ui = createUI(document.getElementById('ui')!);
 const renderer = createRenderer(canvas);
 const fx = createFx(matchMedia('(prefers-reduced-motion: reduce)').matches);
-const keyboard = createKeyboard(window);
+// On How to play the arrow keys scroll the list; everywhere else they must not scroll the itch page.
+const keyboard = createKeyboard(window, () => screen !== 'howto');
 const joystick = createJoystick(canvas);
 const sfx = createSfx();
 
@@ -164,26 +166,24 @@ function frame(now: number) {
 ui.onAction(act);
 window.addEventListener('keydown', (e) => {
   sfx.unlock();
-  if (e.repeat) return;
-  const onButton = (e.target as Element | null)?.closest?.('button');
-  switch (e.code) {
-    case 'Escape':
-    case 'KeyP':
-      if (screen === 'playing') pause();
-      else if (screen === 'paused') resume();
-      else if (screen === 'howto') setScreen('title');
+  const onButton = !!(e.target as Element | null)?.closest?.('button');
+  const { action, preventDefault } = shortcutFor({ code: e.code, repeat: e.repeat, ctrlKey: e.ctrlKey, metaKey: e.metaKey, altKey: e.altKey, onButton }, screen);
+  if (preventDefault) e.preventDefault();
+  switch (action) {
+    case 'pause':
+      pause();
       break;
-    case 'KeyR':
-      if (screen === 'playing' || screen === 'paused' || screen === 'gameover') startGame();
+    case 'resume':
+      resume();
       break;
-    case 'Enter':
-    case 'Space':
-      if (onButton) return; // the button's own click handles it
-      e.preventDefault();
-      if (screen === 'title' || screen === 'gameover') startGame();
-      else if (screen === 'paused') resume();
+    case 'back':
+      setScreen('title');
       break;
-    case 'KeyM':
+    case 'restart':
+    case 'start':
+      startGame();
+      break;
+    case 'mute':
       toggleMute();
       break;
   }

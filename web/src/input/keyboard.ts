@@ -12,13 +12,14 @@ export interface Keyboard {
   dispose(): void;
 }
 
-export function createKeyboard(target: EventTarget): Keyboard {
+/** `capture` decides whether movement keys are kept from the browser (scrolling); they are tracked either way. */
+export function createKeyboard(target: EventTarget, capture: () => boolean = () => true): Keyboard {
   const held = new Set<string>();
   const onDown = (e: Event) => {
     const code = (e as KeyboardEvent).code;
     if (!MOVE.has(code)) return;
     held.add(code);
-    e.preventDefault();
+    if (capture()) e.preventDefault();
   };
   const onUp = (e: Event) => {
     held.delete((e as KeyboardEvent).code);
