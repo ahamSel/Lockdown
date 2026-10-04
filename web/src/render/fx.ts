@@ -26,6 +26,17 @@ interface Ring {
   color: string;
 }
 
+/** A short red tick painted on the wall where a ball bounced. */
+interface WallMark {
+  axis: 0 | 1;
+  /** Inner edge of the wall that was hit (world units on the bounce axis). */
+  edge: number;
+  side: -1 | 1;
+  /** Position along the wall. */
+  pos: number;
+  life: number;
+}
+
 export interface Fx {
   handle(events: SimEvent[], world: World): void;
   update(dt: number, world: World): void;
@@ -34,6 +45,7 @@ export interface Fx {
   shakeOffset(): Vec;
   flash(): { rgb: RGB; alpha: number };
   reset(): void;
+  stats(): { particles: number; rings: number; marks: number };
 }
 
 const RED = CONFIG.colors.ball;
@@ -41,6 +53,12 @@ const GREEN = CONFIG.colors.player;
 const WHITE = '#ffffff';
 const EMBERS = ['#ff8b00', '#ffb000', '#ff0c00'];
 const MAX_RINGS = 120;
+const MAX_MARKS = 40;
+/** Above this many balls, wall ticks would just be noise. */
+const MARK_MAX_BALLS = 40;
+const MARK_LIFE = 0.25;
+const MARK_DEPTH = 0.12;
+const MARK_LENGTH = 0.5;
 /** Peak shake in world units at full trauma; offset = trauma² × this. */
 const SHAKE_UNITS = 0.3;
 
@@ -52,6 +70,7 @@ export function createFx(reducedMotion: boolean): Fx {
   const density = reducedMotion ? 0.5 : 1;
   let particles: Particle[] = [];
   let rings: Ring[] = [];
+  let marks: WallMark[] = [];
   let trauma = 0;
   let flashRgb: RGB = hexToRgb(RED);
   let flashAlpha = 0;
@@ -95,6 +114,7 @@ export function createFx(reducedMotion: boolean): Fx {
             shake(0.7); // 0.7² × 0.3 ≈ 0.15 units peak
             flashWith(RED, 0.4);
             burst(e.x, e.y, 10, WHITE, [2, 6], [0.2, 0.4], [0.05, 0.09]);
+            ring(e.x, e.y, 0.05, 0.75, 0.3, WHITE, 0.05);
             break;
           case 'blocked':
             ring(e.x, e.y, 0.05, 0.35, 0.2, WHITE, 0.03);
@@ -135,6 +155,11 @@ export function createFx(reducedMotion: boolean): Fx {
             }
             break;
           case 'bounce':
+            if (world.balls.length <= MARK_MAX_BALLS && marks.length < MAX_MARKS) {
+              const half = e.axis === 0 ? world.halfW : world.halfH;
+              const edge = e.side * (half - CONFIG.wallThickness / 2);
+              marks.push({ axis: e.axis, edge, side: e.side, pos: e.axis === 0 ? e.y : e.x, life: MARK_LIFE });
+            }
             break;
         }
       }
@@ -153,6 +178,8 @@ export function createFx(reducedMotion: boolean): Fx {
       particles = particles.filter((p) => p.life > 0);
       for (const r of rings) r.life -= dt;
       rings = rings.filter((r) => r.life > 0);
+      for (const m of marks) m.life -= dt;
+      marks = marks.filter((m) => m.life > 0);
       trauma = Math.max(0, trauma - 1.8 * dt);
       flashAlpha *= Math.exp(-5 * dt);
 
@@ -180,6 +207,17 @@ export function createFx(reducedMotion: boolean): Fx {
     },
 
     draw(ctx) {
+      ctx.fillStyle = RED;
+      for (const m of marks) {
+        const t = m.life / MARK_LIFE;
+        const len = MARK_LENGTH * (0.6 + 0.4 * t);
+        const depth = MARK_DEPTH * t;
+        // Painted on the wall itself, just outside the playfield.
+        const a = m.side > 0 ? m.edge : m.edge - depth;
+        ctx.globalAlpha = t;
+        if (m.axis === 0) ctx.fillRect(a, m.pos - len / 2, depth, len);
+        else ctx.fillRect(m.pos - len / 2, a, len, depth);
+      }
       for (const r of rings) {
         const t = 1 - r.life / r.max;
         const eased = 1 - (1 - t) ** 3;
@@ -216,9 +254,14 @@ export function createFx(reducedMotion: boolean): Fx {
       return { rgb: flashRgb, alpha: flashAlpha };
     },
 
+    stats() {
+      return { particles: particles.length, rings: rings.length, marks: marks.length };
+    },
+
     reset() {
       particles = [];
       rings = [];
+      marks = [];
       trauma = 0;
       flashAlpha = 0;
       emberDebt = 0;

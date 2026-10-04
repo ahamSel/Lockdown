@@ -1,10 +1,11 @@
 import { bounds } from '../game/arena';
 import { CONFIG } from '../game/config';
 import { activePowerups, playerSize, POWERUPS, worldTimeScale } from '../game/powerups';
-import type { World } from '../game/types';
+import type { SimEvent, Vec, World } from '../game/types';
 import type { JoystickView } from '../input/touch';
 import { ballPose, ballPosition } from './ballpose';
 import type { Fx } from './fx';
+import { createPlayerMotion } from './playermotion';
 import { roundedSquare } from './shapes';
 import { approach, clamp01, easeOutBack, hexToRgb, lerp, mixRgb, rgbToCss, type RGB } from './tween';
 
@@ -14,12 +15,19 @@ const BG = hexToRgb(CONFIG.colors.background);
 const FAST_BG = hexToRgb('#1f8bff');
 const SLOW_BG = hexToRgb('#2a2fd6');
 const PLAYER = hexToRgb(CONFIG.colors.player);
+const WHITE: RGB = [255, 255, 255];
+/** Seconds between afterimage samples, and how many to keep. */
+const TRAIL_EVERY = 0.03;
+const TRAIL_LEN = 4;
+const TRAIL_LEN_FAST = 6;
 
 export interface Renderer {
   /** Re-reads the canvas CSS size and returns the new aspect ratio. */
   resize(): number;
   aspect(): number;
   draw(world: World, fx: Fx, alpha: number, joystick: JoystickView | null, dt: number): void;
+  /** Sim events that drive renderer-side animation (the player's hit squash). */
+  onEvents(events: SimEvent[], world: World): void;
 }
 
 export function createRenderer(canvas: HTMLCanvasElement): Renderer {
@@ -31,6 +39,21 @@ export function createRenderer(canvas: HTMLCanvasElement): Renderer {
   let playerRgb: RGB = [...PLAYER];
   let shownSize: number = CONFIG.player.size;
   let clock = 0;
+  const motion = createPlayerMotion();
+  let trail: Vec[] = [];
+  let trailClock = 0;
+  let lastWorld: World | null = null;
+
+  /** A new run starts from a clean slate (no colour, size or motion left over from the last one). */
+  function syncWorld(world: World) {
+    if (world === lastWorld) return;
+    lastWorld = world;
+    motion.reset();
+    trail = [];
+    trailClock = 0;
+    playerRgb = [...PLAYER];
+    shownSize = playerSize(world.player);
+  }
 
   function resize(): number {
     dpr = Math.min(window.devicePixelRatio || 1, 2);
@@ -91,7 +114,7 @@ export function createRenderer(canvas: HTMLCanvasElement): Renderer {
     ctx.fillStyle = CONFIG.colors.ball;
     ctx.beginPath();
     for (const b of world.balls) {
-      const pose = ballPose(b, alpha, inner);
+      const pose = ballPose(b, alpha, inner, CONFIG.step * timeScale);
       if (pose.rx <= 0) continue;
       const { x, y, rx, ry, angle } = pose;
       if (rx === ry) {
@@ -116,6 +139,29 @@ export function createRenderer(canvas: HTMLCanvasElement): Renderer {
     const target = active.length > 0 ? hexToRgb(POWERUPS[active[0].id].color) : PLAYER;
     playerRgb = [approach(playerRgb[0], target[0], 12, dt), approach(playerRgb[1], target[1], 12, dt), approach(playerRgb[2], target[2], 12, dt)];
 
+    // Squash & stretch from how fast it is moving, plus faint afterimages.
+    const vx = (p.x - p.px) / CONFIG.step;
+    const vy = (p.y - p.py) / CONFIG.step;
+    const speed = Math.hypot(vx, vy);
+    motion.update(vx, vy, dt);
+    trailClock += dt;
+    if (dt > 0 && trailClock >= TRAIL_EVERY) {
+      trailClock = 0;
+      if (speed > 1) trail.push({ x, y });
+      else trail.shift();
+      const max = p.timers.speedUp > 0 ? TRAIL_LEN_FAST : TRAIL_LEN;
+      while (trail.length > max) trail.shift();
+    }
+    const fill = rgbToCss(playerRgb);
+    ctx.fillStyle = fill;
+    for (let i = 0; i < trail.length; i++) {
+      const k = (i + 1) / (trail.length + 1);
+      const s = shownSize * (0.55 + 0.35 * k);
+      ctx.globalAlpha = 0.22 * k;
+      ctx.fillRect(trail[i].x - s / 2, trail[i].y - s / 2, s, s);
+    }
+    ctx.globalAlpha = 1;
+
     // Other active powerups as outline rings, the second-longest innermost.
     ctx.lineWidth = 0.05;
     for (let i = Math.min(active.length, 4) - 1; i >= 1; i--) {
@@ -135,9 +181,18 @@ export function createRenderer(canvas: HTMLCanvasElement): Renderer {
       ctx.stroke();
     }
 
-    ctx.globalAlpha = p.invuln > 0 && Math.floor(p.invuln * 14) % 2 === 0 ? 0.3 : 1;
-    ctx.fillStyle = rgbToCss(playerRgb);
-    ctx.fillRect(x - half, y - half, shownSize, shownSize);
+    const pose = motion.pose();
+    // Blink while invulnerable, but let the white hit flash show first.
+    ctx.globalAlpha = pose.flash === 0 && p.invuln > 0 && Math.floor(p.invuln * 14) % 2 === 0 ? 0.3 : 1;
+    ctx.fillStyle = pose.flash > 0 ? rgbToCss(mixRgb(playerRgb, WHITE, pose.flash)) : fill;
+    // Stretch along the motion axis: rotate in, scale, rotate back so the square stays upright.
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(pose.angle);
+    ctx.scale(pose.along, pose.across);
+    ctx.rotate(-pose.angle);
+    ctx.fillRect(-half, -half, shownSize, shownSize);
+    ctx.restore();
     ctx.globalAlpha = 1;
   }
 
@@ -168,7 +223,16 @@ export function createRenderer(canvas: HTMLCanvasElement): Renderer {
   return {
     resize,
     aspect: () => cssW / cssH,
+    onEvents(events, world) {
+      syncWorld(world);
+      const p = world.player;
+      for (const e of events) {
+        if (e.type === 'hit') motion.hit(p.x - e.x, p.y - e.y);
+        else if (e.type === 'death') trail = [];
+      }
+    },
     draw(world, fx, alpha, joystick, dt) {
+      syncWorld(world);
       clock += dt;
       const timeScale = worldTimeScale(world.player);
       tint = approach(tint, timeScale > 1 ? 1 : timeScale < 1 ? -1 : 0, 4, dt);

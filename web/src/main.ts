@@ -16,6 +16,8 @@ import { createUI, type ScreenName, type UIAction } from './ui/screens';
 
 const ZERO: Vec = { x: 0, y: 0 };
 const GAME_OVER_DELAY = 1.2;
+/** A hit freezes the world for a moment so it lands with some weight. */
+const HIT_STOP = 0.05;
 
 const canvas = document.getElementById('game') as HTMLCanvasElement;
 const ui = createUI(document.getElementById('ui')!);
@@ -34,6 +36,7 @@ let acc = 0;
 let alpha = 0;
 let last = performance.now();
 let gameOverIn = -1;
+let hitStop = 0;
 
 if (import.meta.env.DEV) {
   (window as unknown as { gwa: unknown }).gwa = { world: () => world };
@@ -54,6 +57,7 @@ function startGame() {
   world = createWorld({ aspect: renderer.aspect() });
   best.startRun();
   acc = 0;
+  hitStop = 0;
   gameOverIn = -1;
   fx.reset();
   setScreen('playing');
@@ -124,11 +128,15 @@ function act(action: UIAction) {
 function handleEvents(events: SimEvent[]) {
   if (events.length === 0) return;
   fx.handle(events, world);
+  renderer.onEvents(events, world);
   for (const e of events) {
     const sound = soundForEvent(e, world);
     if (sound) sfx.play(sound[0], sound[1]);
     if (world.demo) continue;
-    if (e.type === 'hit') ui.pulseHp();
+    if (e.type === 'hit') {
+      ui.pulseHp();
+      hitStop = HIT_STOP;
+    }
     else if (e.type === 'death') gameOverIn = GAME_OVER_DELAY;
   }
 }
@@ -147,11 +155,15 @@ function frame(now: number) {
   last = now;
   const running = screen !== 'paused';
   if (running) {
-    const input = currentInput();
-    const plan = planSteps(acc, frameDt, CONFIG.step, CONFIG.maxFrame);
-    for (let i = 0; i < plan.steps; i++) step(world, input, CONFIG.step);
-    acc = plan.acc;
-    alpha = plan.alpha;
+    if (hitStop > 0) {
+      hitStop -= frameDt; // the world holds still; effects and the player's squash keep animating
+    } else {
+      const input = currentInput();
+      const plan = planSteps(acc, frameDt, CONFIG.step, CONFIG.maxFrame);
+      for (let i = 0; i < plan.steps; i++) step(world, input, CONFIG.step);
+      acc = plan.acc;
+      alpha = plan.alpha;
+    }
     handleEvents(drainEvents(world));
     fx.update(frameDt, world);
     if (gameOverIn > 0) {

@@ -59,3 +59,21 @@ describe('effect timing', () => {
     for (const r of radii) expect(r).toBeGreaterThanOrEqual(0);
   });
 });
+
+describe('wall ticks', () => {
+  it('marks the wall where a ball bounced', () => {
+    const fx = createFx(false);
+    fx.handle([{ type: 'bounce', x: 8, y: 1, axis: 0, side: 1 }], quietWorld());
+    expect(fx.stats().marks).toBe(1);
+    fx.update(0.3, quietWorld());
+    expect(fx.stats().marks).toBe(0);
+  });
+
+  it('skips wall ticks once the arena is crowded', () => {
+    const fx = createFx(false);
+    const world = quietWorld();
+    for (let i = 0; i < 60; i++) world.balls.push({ ...world.balls[0] });
+    fx.handle([{ type: 'bounce', x: 8, y: 1, axis: 0, side: 1 }], world);
+    expect(fx.stats().marks).toBe(0);
+  });
+});

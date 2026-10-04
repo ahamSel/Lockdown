@@ -41,6 +41,11 @@ export interface Ball {
   /** Where it touched the wall during the last step (valid when hitF >= 0). */
   hitX: number;
   hitY: number;
+  /** World-seconds since it last touched a wall (drives the bounce wobble). */
+  bounceT: number;
+  /** Which wall it last touched: axis 0 = left/right, 1 = bottom/top; side -1 = min, +1 = max. */
+  bounceAxis: 0 | 1;
+  bounceSide: -1 | 1;
 }
 
 export interface Player {
@@ -65,7 +70,7 @@ export interface Pickup {
 export type SimEvent =
   | { type: 'spawnBall'; x: number; y: number }
   | { type: 'split'; x: number; y: number; r: number }
-  | { type: 'bounce'; x: number; y: number }
+  | { type: 'bounce'; x: number; y: number; axis: 0 | 1; side: -1 | 1 }
   | { type: 'hit'; x: number; y: number; hp: number }
   | { type: 'blocked'; x: number; y: number }
   | { type: 'burn'; x: number; y: number; r: number }

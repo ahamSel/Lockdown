@@ -53,6 +53,9 @@ export function createBall(world: World, x: number, y: number, init: BallInit = 
     hitF: -1,
     hitX: x,
     hitY: y,
+    bounceT: 1,
+    bounceAxis: 0,
+    bounceSide: 1,
     ...init,
   };
 }
@@ -160,6 +163,7 @@ function updateBalls(world: World, wdt: number): void {
     ball.py = ball.y;
     ball.hitF = -1;
     ball.age += wdt;
+    ball.bounceT += wdt;
 
     if (!ball.active) {
       ball.scale += (cfg.seedScale / cfg.growInTime) * wdt;
@@ -176,7 +180,7 @@ function updateBalls(world: World, wdt: number): void {
 
     ball.x += ball.vx * wdt;
     ball.y += ball.vy * wdt;
-    bounceOffWalls(world, ball, b);
+    bounceOffWalls(world, ball, b, wdt);
 
     if (ball.splitTimer > 0) {
       ball.splitTimer -= wdt;
@@ -216,26 +220,35 @@ function contactFraction(gap: number, travel: number): number {
  * Reflects the ball off the walls. The overshoot is mirrored back (rather than parking the ball on the
  * wall) and the contact point is recorded so the renderer can draw the ball actually touching the wall.
  */
-function bounceOffWalls(world: World, ball: Ball, b: Bounds): void {
+function bounceOffWalls(world: World, ball: Ball, b: Bounds, wdt: number): void {
   const r = ball.scale / 2;
   const mx = ball.x;
   const my = ball.y;
   let f = Infinity;
+  let axis: 0 | 1 = 0;
+  let side: -1 | 1 = 1;
+  const contact = (fraction: number, a: 0 | 1, s: -1 | 1) => {
+    if (fraction < f) {
+      f = fraction;
+      axis = a;
+      side = s;
+    }
+  };
   if (mx - r < b.minX) {
-    f = Math.min(f, contactFraction(ball.px - r - b.minX, ball.px - mx));
+    contact(contactFraction(ball.px - r - b.minX, ball.px - mx), 0, -1);
     ball.x = 2 * (b.minX + r) - mx;
     ball.vx = Math.abs(ball.vx);
   } else if (mx + r > b.maxX) {
-    f = Math.min(f, contactFraction(b.maxX - (ball.px + r), mx - ball.px));
+    contact(contactFraction(b.maxX - (ball.px + r), mx - ball.px), 0, 1);
     ball.x = 2 * (b.maxX - r) - mx;
     ball.vx = -Math.abs(ball.vx);
   }
   if (my - r < b.minY) {
-    f = Math.min(f, contactFraction(ball.py - r - b.minY, ball.py - my));
+    contact(contactFraction(ball.py - r - b.minY, ball.py - my), 1, -1);
     ball.y = 2 * (b.minY + r) - my;
     ball.vy = Math.abs(ball.vy);
   } else if (my + r > b.maxY) {
-    f = Math.min(f, contactFraction(b.maxY - (ball.py + r), my - ball.py));
+    contact(contactFraction(b.maxY - (ball.py + r), my - ball.py), 1, 1);
     ball.y = 2 * (b.maxY - r) - my;
     ball.vy = -Math.abs(ball.vy);
   }
@@ -243,7 +256,10 @@ function bounceOffWalls(world: World, ball: Ball, b: Bounds): void {
     ball.hitF = f;
     ball.hitX = ball.px + (mx - ball.px) * f;
     ball.hitY = ball.py + (my - ball.py) * f;
-    world.events.push({ type: 'bounce', x: ball.hitX, y: ball.hitY });
+    ball.bounceT = (1 - f) * wdt;
+    ball.bounceAxis = axis;
+    ball.bounceSide = side;
+    world.events.push({ type: 'bounce', x: ball.hitX, y: ball.hitY, axis, side });
   }
 }
 

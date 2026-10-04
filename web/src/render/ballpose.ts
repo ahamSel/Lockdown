@@ -3,10 +3,11 @@ import { clamp01, easeOutBack, lerp } from './tween';
 
 /** World-seconds a freshly split ball takes to pop in (with a little overshoot). */
 export const POP_TIME = 0.18;
-/** A ball starts flattening when its edge is within this fraction of its radius from a wall. */
-const SQUASH_ZONE = 0.35;
-/** How much a ball flattens when it is pressed right against a wall. */
-const SQUASH_MAX = 0.22;
+/**
+ * Jelly wobble after a wall bounce: flattened at contact, a quick stretch back, then round again.
+ * Deformation along the wall normal is amp · e^(−t/decay) · cos(2πt/period).
+ */
+export const WOBBLE = { amp: 0.32, decay: 0.055, period: 0.13, hold: 0.03, life: 0.3 };
 
 export interface BallPose {
   x: number;
@@ -31,29 +32,23 @@ export function ballPosition(ball: Ball, alpha: number): Vec {
   return { x: lerp(ball.hitX, ball.x, t), y: lerp(ball.hitY, ball.y, t) };
 }
 
-export function ballPose(ball: Ball, alpha: number, b: Bounds): BallPose {
+/** `stepWorld` is the world time one sim step covers (step × time scale). */
+export function ballPose(ball: Ball, alpha: number, _bounds: Bounds, stepWorld: number): BallPose {
   let { x, y } = ballPosition(ball, alpha);
   let r = ball.scale / 2;
   if (ball.active && ball.age < POP_TIME) r *= easeOutBack(clamp01(ball.age / POP_TIME));
 
-  // Nearest wall: gap from the ball's edge, which side, and the wall normal's axis.
-  const gaps: [number, number, number][] = [
-    [x - r - b.minX, -1, 0],
-    [b.maxX - (x + r), 1, 0],
-    [y - r - b.minY, -1, 1],
-    [b.maxY - (y + r), 1, 1],
-  ];
-  let [gap, side, axis] = gaps[0];
-  for (const g of gaps) if (g[0] < gap) [gap, side, axis] = g;
+  // Time since the wall contact, at the moment being drawn (negative = contact is later in this step).
+  const t = ball.bounceT - (1 - alpha) * stepWorld;
+  if (r <= 0 || t < 0 || t > WOBBLE.life) return { x, y, rx: r, ry: r, angle: 0 };
 
-  if (r <= 0 || gap >= r * SQUASH_ZONE) return { x, y, rx: r, ry: r, angle: 0 };
-
-  // Flatten along the wall normal, keeping the wall-side edge where it is so the ball stays on the wall.
-  const amount = 1 - Math.max(0, gap) / (r * SQUASH_ZONE);
-  const rx = r * (1 - SQUASH_MAX * amount);
-  const ry = r * (1 + SQUASH_MAX * amount * 0.5);
-  const shift = (r - rx) * side;
-  if (axis === 0) x += shift;
+  const d = WOBBLE.amp * Math.exp(-t / WOBBLE.decay) * Math.cos(((2 * Math.PI) / WOBBLE.period) * t);
+  const rx = r * (1 - d);
+  const ry = r * (1 + d * 0.6);
+  // Right at impact, keep the flattened side pressed on the wall instead of shrinking away from it.
+  const anchor = Math.max(0, 1 - t / WOBBLE.hold);
+  const shift = (r - rx) * ball.bounceSide * anchor;
+  if (ball.bounceAxis === 0) x += shift;
   else y += shift;
-  return { x, y, rx, ry, angle: axis === 0 ? 0 : Math.PI / 2 };
+  return { x, y, rx, ry, angle: ball.bounceAxis === 0 ? 0 : Math.PI / 2 };
 }
