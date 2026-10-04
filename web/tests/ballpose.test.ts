@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { bounds } from '../src/game/arena';
 import { drainEvents, spawnBall, step } from '../src/game/sim';
 import { ballPose, ballPosition, POP_TIME, WOBBLE } from '../src/render/ballpose';
+import type { BallPose } from '../src/render/ballpose';
 import { quietWorld, STEP, ZERO } from './helpers';
 
 describe('ball wall contact', () => {
@@ -86,5 +87,57 @@ describe('split pop', () => {
     const children = world.balls.filter((b) => b.splitTimer !== Infinity);
     expect(children).toHaveLength(3);
     for (const c of children) expect(c.age).toBeLessThan(0.05);
+  });
+});
+
+/** Half the ellipse's extent along the x axis (how far it reaches left/right of its centre). */
+const extentX = (p: BallPose) => Math.hypot(p.rx * Math.cos(p.angle), p.ry * Math.sin(p.angle));
+
+describe('motion stretch', () => {
+  it('stretches a moving ball along its direction of travel', () => {
+    const world = quietWorld();
+    const b = bounds(world);
+    const across = spawnBall(world, 0, 0, { active: true, scale: 0.2, age: 5, vx: 10 });
+    const p = ballPose(across, 1, b, STEP);
+    expect(p.rx).toBeGreaterThan(0.11);
+    expect(p.ry).toBeLessThan(0.1);
+    expect(Math.cos(p.angle) ** 2).toBeCloseTo(1, 6);
+    const up = spawnBall(world, 0, 2, { active: true, scale: 0.2, age: 5, vy: 10 });
+    expect(Math.sin(ballPose(up, 1, b, STEP).angle) ** 2).toBeCloseTo(1, 6);
+  });
+
+  it('stretches more when time runs fast', () => {
+    const world = quietWorld();
+    const b = bounds(world);
+    const ball = spawnBall(world, 0, 0, { active: true, scale: 0.2, age: 5, vx: 10 });
+    expect(ballPose(ball, 1, b, STEP * 2).rx).toBeGreaterThan(ballPose(ball, 1, b, STEP).rx);
+  });
+
+  it('never pokes through a wall it is about to hit', () => {
+    const world = quietWorld();
+    const b = bounds(world);
+    const ball = spawnBall(world, b.maxX - 0.1 - 0.005, 0, { active: true, scale: 0.2, age: 5, vx: 10 });
+    const p = ballPose(ball, 1, b, STEP);
+    expect(p.x + extentX(p)).toBeLessThanOrEqual(b.maxX + 1e-9);
+  });
+
+  it('starts round right after a split and stretches out as it leaves', () => {
+    const world = quietWorld();
+    const b = bounds(world);
+    const young = spawnBall(world, 0, 0, { active: true, scale: 0.2, age: POP_TIME, vx: 10 });
+    const old = spawnBall(world, 0, 2, { active: true, scale: 0.2, age: 5, vx: 10 });
+    expect(ballPose(young, 1, b, STEP).rx).toBeLessThan(ballPose(old, 1, b, STEP).rx);
+  });
+
+  it('eases the stretch back in after the bounce wobble', () => {
+    const world = quietWorld();
+    const b = bounds(world);
+    const ball = spawnBall(world, 0, 0, { active: true, scale: 0.2, age: 5, vx: -10, bounceAxis: 0, bounceSide: 1 });
+    ball.bounceT = WOBBLE.life + 0.01;
+    const easing = ballPose(ball, 1, b, STEP).rx;
+    ball.bounceT = 1;
+    const settled = ballPose(ball, 1, b, STEP).rx;
+    expect(easing).toBeLessThan(settled);
+    expect(easing).toBeGreaterThanOrEqual(0.1 - 1e-9);
   });
 });

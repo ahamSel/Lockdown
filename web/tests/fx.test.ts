@@ -61,11 +61,11 @@ describe('effect timing', () => {
 });
 
 describe('bounce effects', () => {
-  it('marks the wall and rings the contact point when a ball bounces', () => {
+  it('marks the wall (and only the wall) when a ball bounces', () => {
     const fx = createFx(false);
     fx.handle([{ type: 'bounce', x: 8, y: 1, axis: 0, side: 1, r: 0.1 }], quietWorld());
     expect(fx.stats().marks).toBe(1);
-    expect(fx.stats().rings).toBe(1);
+    expect(fx.stats().rings).toBe(0);
     fx.update(0.25, quietWorld());
     expect(fx.stats().marks).toBe(1); // ticks stay visible a little longer than a quarter second
     fx.update(0.2, quietWorld());
