@@ -1,12 +1,14 @@
+import { bounds } from '../game/arena';
 import { CONFIG } from '../game/config';
 import { activePowerups, playerSize, POWERUPS, worldTimeScale } from '../game/powerups';
 import type { World } from '../game/types';
 import type { JoystickView } from '../input/touch';
+import { ballPose, ballPosition } from './ballpose';
 import type { Fx } from './fx';
+import { roundedSquare } from './shapes';
 import { approach, clamp01, easeOutBack, hexToRgb, lerp, mixRgb, rgbToCss, type RGB } from './tween';
 
 const TAU = Math.PI * 2;
-const SQUASH_TIME = 0.12;
 const BG = hexToRgb(CONFIG.colors.background);
 // Time tints stay in the blue family: mixing in the yellow/purple powerup colours turns the field grey.
 const FAST_BG = hexToRgb('#1f8bff');
@@ -62,14 +64,13 @@ export function createRenderer(canvas: HTMLCanvasElement): Renderer {
       ctx.rotate(Math.PI / 4);
       ctx.fillStyle = POWERUPS[pk.kind].color;
       ctx.beginPath();
-      ctx.roundRect(-h, -h, 2 * h, 2 * h, h * 0.35);
+      roundedSquare(ctx, h, h * 0.35);
       ctx.fill();
       ctx.restore();
     }
   }
 
   function drawBalls(world: World, alpha: number, timeScale: number) {
-    ctx.fillStyle = CONFIG.colors.ball;
     if (timeScale > 1) {
       // Motion streaks: a short round-capped stroke behind each ball.
       ctx.globalAlpha = 0.3;
@@ -77,32 +78,28 @@ export function createRenderer(canvas: HTMLCanvasElement): Renderer {
       ctx.lineCap = 'round';
       for (const b of world.balls) {
         if (!b.active) continue;
-        const x = lerp(b.px, b.x, alpha);
-        const y = lerp(b.py, b.y, alpha);
+        const p = ballPosition(b, alpha);
         ctx.lineWidth = b.scale * 0.8;
         ctx.beginPath();
-        ctx.moveTo(x, y);
-        ctx.lineTo(x - b.vx * 0.045, y - b.vy * 0.045);
+        ctx.moveTo(p.x, p.y);
+        ctx.lineTo(p.x - b.vx * 0.045, p.y - b.vy * 0.045);
         ctx.stroke();
       }
       ctx.globalAlpha = 1;
     }
+    const inner = bounds(world);
+    ctx.fillStyle = CONFIG.colors.ball;
     ctx.beginPath();
     for (const b of world.balls) {
-      const r = b.scale / 2;
-      if (r <= 0) continue;
-      const x = lerp(b.px, b.x, alpha);
-      const y = lerp(b.py, b.y, alpha);
-      if (b.bounceAge < SQUASH_TIME) {
-        const s = 1 - 0.3 * (1 - b.bounceAge / SQUASH_TIME);
-        const rx = r * s;
-        const ry = r / s;
-        const a = b.bounceAngle;
-        ctx.moveTo(x + rx * Math.cos(a), y + rx * Math.sin(a));
-        ctx.ellipse(x, y, rx, ry, a, 0, TAU);
+      const pose = ballPose(b, alpha, inner);
+      if (pose.rx <= 0) continue;
+      const { x, y, rx, ry, angle } = pose;
+      if (rx === ry) {
+        ctx.moveTo(x + rx, y);
+        ctx.arc(x, y, rx, 0, TAU);
       } else {
-        ctx.moveTo(x + r, y);
-        ctx.arc(x, y, r, 0, TAU);
+        ctx.moveTo(x + rx * Math.cos(angle), y + rx * Math.sin(angle));
+        ctx.ellipse(x, y, rx, ry, angle, 0, TAU);
       }
     }
     ctx.fill();

@@ -1,7 +1,8 @@
 import './ui/styles.css';
+import { soundForEvent } from './audio/events';
 import { createSfx } from './audio/sfx';
+import { createBestTracker } from './best';
 import { CONFIG } from './game/config';
-import { POWERUP_IDS } from './game/powerups';
 import { createWorld, drainEvents, resizeWorld, step } from './game/sim';
 import type { SimEvent, Vec, World } from './game/types';
 import { createKeyboard } from './input/keyboard';
@@ -25,7 +26,7 @@ const sfx = createSfx();
 
 let screen: ScreenName = 'title';
 let world: World = createWorld({ aspect: renderer.aspect(), demo: true });
-let best = readNumber('best', 0);
+const best = createBestTracker(readNumber('best', 0), (v) => writeNumber('best', v));
 let muted = readBool('muted', false);
 let acc = 0;
 let alpha = 0;
@@ -43,15 +44,13 @@ function setScreen(next: ScreenName) {
 }
 
 function saveBest() {
-  if (!world.demo && world.score > best) {
-    best = world.score;
-    writeNumber('best', best);
-  }
+  if (!world.demo) best.record(world.score);
 }
 
 function startGame() {
   saveBest();
   world = createWorld({ aspect: renderer.aspect() });
+  best.startRun();
   acc = 0;
   gameOverIn = -1;
   fx.reset();
@@ -63,7 +62,7 @@ function toMenu() {
   world = createWorld({ aspect: renderer.aspect(), demo: true });
   gameOverIn = -1;
   fx.reset();
-  ui.setBest(best);
+  ui.setBest(best.value);
   setScreen('title');
 }
 
@@ -80,9 +79,8 @@ function resume() {
 }
 
 function showGameOver() {
-  const isNewBest = world.score > best;
   saveBest();
-  ui.gameOver(world.score, best, isNewBest);
+  ui.gameOver(world.score, best.value, best.isNewBest(world.score));
   setScreen('gameover');
 }
 
@@ -125,45 +123,12 @@ function act(action: UIAction) {
 function handleEvents(events: SimEvent[]) {
   if (events.length === 0) return;
   fx.handle(events, world);
-  if (world.demo) return; // the title screen stays quiet
   for (const e of events) {
-    switch (e.type) {
-      case 'split':
-        sfx.play('split');
-        break;
-      case 'bounce':
-        if (world.balls.length <= 27) sfx.play('bounce');
-        break;
-      case 'hit':
-        sfx.play('hit');
-        ui.pulseHp();
-        break;
-      case 'blocked':
-        sfx.play('blocked');
-        break;
-      case 'burn':
-        sfx.play('burn');
-        break;
-      case 'pickup':
-        sfx.play('pickup', POWERUP_IDS.indexOf(e.kind) * 2);
-        break;
-      case 'expire':
-        sfx.play('expire');
-        break;
-      case 'spawnBall':
-        sfx.play('spawn');
-        break;
-      case 'cleared':
-        sfx.play('cleared');
-        break;
-      case 'death':
-        sfx.play('death');
-        gameOverIn = GAME_OVER_DELAY;
-        break;
-      case 'raze':
-      case 'spawnPickup':
-        break;
-    }
+    const sound = soundForEvent(e, world);
+    if (sound) sfx.play(sound[0], sound[1]);
+    if (world.demo) continue;
+    if (e.type === 'hit') ui.pulseHp();
+    else if (e.type === 'death') gameOverIn = GAME_OVER_DELAY;
   }
 }
 
@@ -174,6 +139,8 @@ function currentInput(): Vec {
 }
 
 function frame(now: number) {
+  // Schedule first, so one bad frame can't stop the game for good.
+  requestAnimationFrame(frame);
   const frameDt = Math.min((now - last) / 1000, CONFIG.maxFrame);
   last = now;
   const running = screen !== 'paused';
@@ -190,9 +157,8 @@ function frame(now: number) {
       if (gameOverIn <= 0) showGameOver();
     }
   }
-  if (!world.demo) ui.hud(world, Math.max(best, world.score));
+  if (!world.demo) ui.hud(world, Math.max(best.value, world.score));
   renderer.draw(world, fx, alpha, screen === 'playing' ? joystick.view() : null, running ? frameDt : 0);
-  requestAnimationFrame(frame);
 }
 
 ui.onAction(act);
@@ -232,6 +198,6 @@ document.addEventListener('visibilitychange', () => {
 
 sfx.setMuted(muted);
 ui.setMuted(muted);
-ui.setBest(best);
+ui.setBest(best.value);
 setScreen('title');
 requestAnimationFrame(frame);

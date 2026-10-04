@@ -41,6 +41,8 @@ const GREEN = CONFIG.colors.player;
 const WHITE = '#ffffff';
 const EMBERS = ['#ff8b00', '#ffb000', '#ff0c00'];
 const MAX_RINGS = 120;
+/** Peak shake in world units at full trauma; offset = trauma² × this. */
+const SHAKE_UNITS = 0.3;
 
 type Range = readonly [number, number];
 const pickIn = ([lo, hi]: Range) => lo + Math.random() * (hi - lo);
@@ -90,7 +92,7 @@ export function createFx(reducedMotion: boolean): Fx {
             ring(e.x, e.y, e.r, e.r * 3 + 0.25, 0.25, RED, 0.03);
             break;
           case 'hit':
-            shake(0.55);
+            shake(0.7); // 0.7² × 0.3 ≈ 0.15 units peak
             flashWith(RED, 0.4);
             burst(e.x, e.y, 10, WHITE, [2, 6], [0.2, 0.4], [0.05, 0.09]);
             break;
@@ -205,7 +207,7 @@ export function createFx(reducedMotion: boolean): Fx {
 
     shakeOffset() {
       if (trauma <= 0) return { x: 0, y: 0 };
-      const m = trauma * trauma * 0.22;
+      const m = trauma * trauma * SHAKE_UNITS;
       return { x: (Math.random() * 2 - 1) * m, y: (Math.random() * 2 - 1) * m };
     },
 

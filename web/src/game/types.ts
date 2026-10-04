@@ -34,9 +34,13 @@ export interface Ball {
   active: boolean;
   /** World-seconds until this ball splits. */
   splitTimer: number;
-  /** Seconds since the last wall bounce, used for the squash effect. */
-  bounceAge: number;
-  bounceAngle: number;
+  /** World-seconds since the ball was created (drives the split "pop"). */
+  age: number;
+  /** Fraction of the last step at which the ball touched a wall, or -1 if it didn't. */
+  hitF: number;
+  /** Where it touched the wall during the last step (valid when hitF >= 0). */
+  hitX: number;
+  hitY: number;
 }
 
 export interface Player {

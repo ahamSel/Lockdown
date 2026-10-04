@@ -49,8 +49,10 @@ export function createBall(world: World, x: number, y: number, init: BallInit = 
     scale: 0,
     active: false,
     splitTimer: CONFIG.ball.splitInterval,
-    bounceAge: 1,
-    bounceAngle: 0,
+    age: 0,
+    hitF: -1,
+    hitX: x,
+    hitY: y,
     ...init,
   };
 }
@@ -108,6 +110,7 @@ export function resizeWorld(world: World, aspect: number): void {
     const r = ball.scale / 2;
     ball.x = ball.px = clamp(ball.x, b.minX + r, b.maxX - r);
     ball.y = ball.py = clamp(ball.y, b.minY + r, b.maxY - r);
+    ball.hitF = -1;
   }
   const pb = bounds(world, CONFIG.pickup.edgeMargin);
   for (const pk of world.pickups) {
@@ -155,7 +158,8 @@ function updateBalls(world: World, wdt: number): void {
     const ball = balls[i];
     ball.px = ball.x;
     ball.py = ball.y;
-    ball.bounceAge += wdt;
+    ball.hitF = -1;
+    ball.age += wdt;
 
     if (!ball.active) {
       ball.scale += (cfg.seedScale / cfg.growInTime) * wdt;
@@ -202,32 +206,44 @@ function updateBalls(world: World, wdt: number): void {
   for (const nb of born) balls.push(nb);
 }
 
+/** Fraction of a step's travel at which an edge `gap` away from a wall reaches it. */
+function contactFraction(gap: number, travel: number): number {
+  if (travel <= 0 || gap <= 0) return 0;
+  return Math.min(1, gap / travel);
+}
+
+/**
+ * Reflects the ball off the walls. The overshoot is mirrored back (rather than parking the ball on the
+ * wall) and the contact point is recorded so the renderer can draw the ball actually touching the wall.
+ */
 function bounceOffWalls(world: World, ball: Ball, b: Bounds): void {
   const r = ball.scale / 2;
-  let nx = 0;
-  let ny = 0;
-  if (ball.x - r < b.minX) {
-    ball.x = b.minX + r;
-    if (ball.vx < 0) ball.vx = -ball.vx;
-    nx = 1;
-  } else if (ball.x + r > b.maxX) {
-    ball.x = b.maxX - r;
-    if (ball.vx > 0) ball.vx = -ball.vx;
-    nx = -1;
+  const mx = ball.x;
+  const my = ball.y;
+  let f = Infinity;
+  if (mx - r < b.minX) {
+    f = Math.min(f, contactFraction(ball.px - r - b.minX, ball.px - mx));
+    ball.x = 2 * (b.minX + r) - mx;
+    ball.vx = Math.abs(ball.vx);
+  } else if (mx + r > b.maxX) {
+    f = Math.min(f, contactFraction(b.maxX - (ball.px + r), mx - ball.px));
+    ball.x = 2 * (b.maxX - r) - mx;
+    ball.vx = -Math.abs(ball.vx);
   }
-  if (ball.y - r < b.minY) {
-    ball.y = b.minY + r;
-    if (ball.vy < 0) ball.vy = -ball.vy;
-    ny = 1;
-  } else if (ball.y + r > b.maxY) {
-    ball.y = b.maxY - r;
-    if (ball.vy > 0) ball.vy = -ball.vy;
-    ny = -1;
+  if (my - r < b.minY) {
+    f = Math.min(f, contactFraction(ball.py - r - b.minY, ball.py - my));
+    ball.y = 2 * (b.minY + r) - my;
+    ball.vy = Math.abs(ball.vy);
+  } else if (my + r > b.maxY) {
+    f = Math.min(f, contactFraction(b.maxY - (ball.py + r), my - ball.py));
+    ball.y = 2 * (b.maxY - r) - my;
+    ball.vy = -Math.abs(ball.vy);
   }
-  if (nx !== 0 || ny !== 0) {
-    ball.bounceAge = 0;
-    ball.bounceAngle = Math.atan2(ny, nx);
-    world.events.push({ type: 'bounce', x: ball.x, y: ball.y });
+  if (f !== Infinity) {
+    ball.hitF = f;
+    ball.hitX = ball.px + (mx - ball.px) * f;
+    ball.hitY = ball.py + (my - ball.py) * f;
+    world.events.push({ type: 'bounce', x: ball.hitX, y: ball.hitY });
   }
 }
 

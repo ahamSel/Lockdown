@@ -47,7 +47,8 @@ export function createSfx(): Sfx {
           return;
         }
       }
-      if (ctx.state === 'suspended') void ctx.resume();
+      // 'suspended' before the first gesture; iOS can also leave it 'interrupted' after a call or app switch.
+      if (ctx.state !== 'running') void ctx.resume();
     },
 
     play(name, variant = 0) {
