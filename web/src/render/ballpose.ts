@@ -7,7 +7,7 @@ export const POP_TIME = 0.18;
  * Jelly wobble after a wall bounce: flattened at contact, a quick stretch back, then round again.
  * Deformation along the wall normal is amp · e^(−t/decay) · cos(2πt/period).
  */
-export const WOBBLE = { amp: 0.32, decay: 0.055, period: 0.13, hold: 0.03, life: 0.3 };
+export const WOBBLE = { amp: 0.45, decay: 0.07, period: 0.16, hold: 0.04, life: 0.4 };
 
 export interface BallPose {
   x: number;

@@ -25,9 +25,9 @@ describe('soundForEvent', () => {
 
   it('drops bounce ticks once the arena is busy', () => {
     const world = quietWorld();
-    expect(soundForEvent({ type: 'bounce', x: 0, y: 0, axis: 0, side: 1 }, world)).toEqual(['bounce', 0]);
+    expect(soundForEvent({ type: 'bounce', x: 0, y: 0, axis: 0, side: 1, r: 0.1 }, world)).toEqual(['bounce', 0]);
     world.balls.length = 0;
     for (let i = 0; i < 28; i++) world.balls.push({ ...world.balls[0] } as never);
-    expect(soundForEvent({ type: 'bounce', x: 0, y: 0, axis: 0, side: 1 }, world)).toBeNull();
+    expect(soundForEvent({ type: 'bounce', x: 0, y: 0, axis: 0, side: 1, r: 0.1 }, world)).toBeNull();
   });
 });

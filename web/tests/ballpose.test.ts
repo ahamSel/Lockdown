@@ -34,7 +34,7 @@ describe('ball wall contact', () => {
     const ball = spawnBall(world, b.maxX - 0.1 - 0.1, -3, { active: true, scale: 0.2, vx: 10, age: 1 });
     step(world, ZERO, STEP);
     const pose = ballPose(ball, ball.hitF, b, STEP);
-    expect(pose.rx).toBeLessThan(0.08);
+    expect(pose.rx).toBeLessThan(0.065); // squashed by about half: visible even on a small ball
     // 3 places: the ball also grows a hair (growRate × step) after touching the wall.
     expect(pose.x + pose.rx).toBeCloseTo(b.maxX, 3);
   });
@@ -58,7 +58,7 @@ describe('ball wall contact', () => {
     expect(ball.bounceAxis).toBe(0);
     expect(ball.bounceSide).toBe(1);
     const ev = drainEvents(world).find((e) => e.type === 'bounce');
-    expect(ev).toMatchObject({ axis: 0, side: 1 });
+    expect(ev).toMatchObject({ axis: 0, side: 1, r: 0.1 });
   });
 
   it('stays round away from the walls', () => {

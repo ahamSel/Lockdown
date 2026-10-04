@@ -259,7 +259,7 @@ function bounceOffWalls(world: World, ball: Ball, b: Bounds, wdt: number): void 
     ball.bounceT = (1 - f) * wdt;
     ball.bounceAxis = axis;
     ball.bounceSide = side;
-    world.events.push({ type: 'bounce', x: ball.hitX, y: ball.hitY, axis, side });
+    world.events.push({ type: 'bounce', x: ball.hitX, y: ball.hitY, axis, side, r });
   }
 }
 

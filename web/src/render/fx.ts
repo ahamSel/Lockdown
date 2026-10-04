@@ -54,11 +54,11 @@ const WHITE = '#ffffff';
 const EMBERS = ['#ff8b00', '#ffb000', '#ff0c00'];
 const MAX_RINGS = 120;
 const MAX_MARKS = 40;
-/** Above this many balls, wall ticks would just be noise. */
+/** Above this many balls, bounce rings and wall ticks would just be noise. */
 const MARK_MAX_BALLS = 40;
-const MARK_LIFE = 0.25;
-const MARK_DEPTH = 0.12;
-const MARK_LENGTH = 0.5;
+const MARK_LIFE = 0.35;
+const MARK_DEPTH = CONFIG.wallThickness / 2; // the whole visible wall
+const MARK_LENGTH = 0.8;
 /** Peak shake in world units at full trauma; offset = trauma² × this. */
 const SHAKE_UNITS = 0.3;
 
@@ -156,6 +156,8 @@ export function createFx(reducedMotion: boolean): Fx {
             break;
           case 'bounce':
             if (world.balls.length <= MARK_MAX_BALLS && marks.length < MAX_MARKS) {
+              // A small ring from the contact point, sized to the ball, so even tiny balls read as bouncing.
+              ring(e.x, e.y, e.r * 0.6, e.r * 2.6 + 0.15, 0.22, RED, 0.035);
               const half = e.axis === 0 ? world.halfW : world.halfH;
               const edge = e.side * (half - CONFIG.wallThickness / 2);
               marks.push({ axis: e.axis, edge, side: e.side, pos: e.axis === 0 ? e.y : e.x, life: MARK_LIFE });

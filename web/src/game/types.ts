@@ -70,7 +70,7 @@ export interface Pickup {
 export type SimEvent =
   | { type: 'spawnBall'; x: number; y: number }
   | { type: 'split'; x: number; y: number; r: number }
-  | { type: 'bounce'; x: number; y: number; axis: 0 | 1; side: -1 | 1 }
+  | { type: 'bounce'; x: number; y: number; axis: 0 | 1; side: -1 | 1; r: number }
   | { type: 'hit'; x: number; y: number; hp: number }
   | { type: 'blocked'; x: number; y: number }
   | { type: 'burn'; x: number; y: number; r: number }
