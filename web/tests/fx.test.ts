@@ -34,3 +34,28 @@ describe('screen shake', () => {
     expect(peakShake(fx)).toBe(0);
   });
 });
+
+describe('effect timing', () => {
+  it('never draws a negative radius, even after a negative frame delta', () => {
+    const fx = createFx(false);
+    const world = quietWorld();
+    fx.handle([{ type: 'spawnBall', x: 0, y: 0 }, { type: 'split', x: 1, y: 1, r: 0.1 }], world);
+    fx.update(-0.05, world); // a rAF timestamp can be earlier than the clock read at startup
+    const radii: number[] = [];
+    const noop = () => {};
+    const ctx = {
+      globalAlpha: 1,
+      strokeStyle: '',
+      fillStyle: '',
+      lineWidth: 1,
+      beginPath: noop,
+      stroke: noop,
+      fill: noop,
+      fillRect: noop,
+      arc: (_x: number, _y: number, r: number) => radii.push(r),
+    };
+    fx.draw(ctx as unknown as CanvasRenderingContext2D);
+    expect(radii.length).toBeGreaterThan(0);
+    for (const r of radii) expect(r).toBeGreaterThanOrEqual(0);
+  });
+});

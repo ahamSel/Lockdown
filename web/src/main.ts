@@ -76,7 +76,6 @@ function pause() {
 
 function resume() {
   if (screen !== 'paused') return;
-  last = performance.now();
   setScreen('playing');
 }
 
@@ -143,7 +142,8 @@ function currentInput(): Vec {
 function frame(now: number) {
   // Schedule first, so one bad frame can't stop the game for good.
   requestAnimationFrame(frame);
-  const frameDt = Math.min((now - last) / 1000, CONFIG.maxFrame);
+  // rAF timestamps can be slightly earlier than a performance.now() read, so never go negative.
+  const frameDt = Math.min(Math.max(0, (now - last) / 1000), CONFIG.maxFrame);
   last = now;
   const running = screen !== 'paused';
   if (running) {

@@ -5,7 +5,8 @@
   --red: #ff0c00;
   --shade: rgba(0, 24, 96, 0.32);
   --font: ui-rounded, 'SF Pro Rounded', 'Nunito', 'Segoe UI', system-ui, -apple-system, sans-serif;
-  --pad: 16px;
+  /* Walls are 0.25 of the 10 world units across the shorter side = 2.5vmin; keep the HUD clear of them. */
+  --pad: calc(2.5vmin + 12px);
   --ease-pop: cubic-bezier(0.2, 1.4, 0.4, 1);
 }
 

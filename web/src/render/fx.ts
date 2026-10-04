@@ -140,7 +140,8 @@ export function createFx(reducedMotion: boolean): Fx {
       }
     },
 
-    update(dt, world) {
+    update(rawDt, world) {
+      const dt = Math.max(0, rawDt); // effects only ever move forward
       const drag = Math.exp(-4 * dt);
       for (const p of particles) {
         p.life -= dt;
