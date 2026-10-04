@@ -54,13 +54,18 @@ const WHITE = '#ffffff';
 const EMBERS = ['#ff8b00', '#ffb000', '#ff0c00'];
 const MAX_RINGS = 120;
 const MAX_MARKS = 40;
-/** Above this many balls, wall ticks would just be noise. */
-const MARK_MAX_BALLS = 40;
+/** Up to this many balls every bounce ticks the wall; beyond it, ticks thin out to about the same rate. */
+const MARK_FULL_BALLS = 27;
 const MARK_LIFE = 0.35;
 const MARK_DEPTH = CONFIG.wallThickness / 2; // the whole visible wall
 const MARK_LENGTH = 0.8;
 /** Peak shake in world units at full trauma; offset = trauma² × this. */
 const SHAKE_UNITS = 0.3;
+
+/** Chance a bounce paints a wall tick: always in a quiet arena, then ∝ 1/balls so a full arena flickers instead of turning red. */
+export function wallTickChance(ballCount: number): number {
+  return Math.min(1, MARK_FULL_BALLS / Math.max(1, ballCount));
+}
 
 type Range = readonly [number, number];
 const pickIn = ([lo, hi]: Range) => lo + Math.random() * (hi - lo);
@@ -155,7 +160,7 @@ export function createFx(reducedMotion: boolean): Fx {
             }
             break;
           case 'bounce':
-            if (world.balls.length <= MARK_MAX_BALLS && marks.length < MAX_MARKS) {
+            if (marks.length < MAX_MARKS && Math.random() < wallTickChance(world.balls.length)) {
               const half = e.axis === 0 ? world.halfW : world.halfH;
               const edge = e.side * (half - CONFIG.wallThickness / 2);
               marks.push({ axis: e.axis, edge, side: e.side, pos: e.axis === 0 ? e.y : e.x, life: MARK_LIFE });

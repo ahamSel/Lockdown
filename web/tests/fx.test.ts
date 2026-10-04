@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createFx } from '../src/render/fx';
+import { createFx, wallTickChance } from '../src/render/fx';
 import { quietWorld } from './helpers';
 
 function peakShake(fx: ReturnType<typeof createFx>): number {
@@ -72,12 +72,18 @@ describe('bounce effects', () => {
     expect(fx.stats().marks).toBe(0);
   });
 
-  it('skips bounce effects once the arena is crowded', () => {
+  it('ticks every bounce while the arena is quiet, then thins out instead of stopping', () => {
+    expect(wallTickChance(1)).toBe(1);
+    expect(wallTickChance(27)).toBe(1);
+    expect(wallTickChance(81)).toBeCloseTo(1 / 3);
+    expect(wallTickChance(729)).toBeCloseTo(27 / 729);
+  });
+
+  it('still shows a few ticks in a full arena', () => {
     const fx = createFx(false);
     const world = quietWorld();
-    for (let i = 0; i < 60; i++) world.balls.push({ ...world.balls[0] });
-    fx.handle([{ type: 'bounce', x: 8, y: 1, axis: 0, side: 1, r: 0.1 }], world);
-    expect(fx.stats().marks).toBe(0);
-    expect(fx.stats().rings).toBe(0);
+    for (let i = 0; i < 728; i++) world.balls.push({ ...world.balls[0] });
+    for (let i = 0; i < 2000; i++) fx.handle([{ type: 'bounce', x: 8, y: 1, axis: 0, side: 1, r: 0.1 }], world);
+    expect(fx.stats().marks).toBeGreaterThan(0);
   });
 });
